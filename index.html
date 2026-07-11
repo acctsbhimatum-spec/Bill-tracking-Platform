@@ -1,0 +1,2131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bill Dāk — Movement Register</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Roboto+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --ink:#23281F;
+  --ink-soft:#565C4B;
+  --paper:#E9EEE1;
+  --paper-raised:#F5F7EC;
+  --paper-deep:#DDE3D0;
+  --rule:#C3C9B3;
+  --rule-strong:#A9B096;
+  --margin-red:#B5453A;
+  --accent:#4B3F7D;
+  --accent-soft:#EDE9F7;
+  --pending:#3D5A73;
+  --pending-soft:#DEE8EE;
+  --approved:#3F6B4A;
+  --approved-soft:#DFEBE1;
+  --hold:#A9781F;
+  --hold-soft:#F1E7CE;
+  --rejected:#A23E2E;
+  --rejected-soft:#F3E0DA;
+  --white:#FFFFFF;
+  --shadow: 0 1px 2px rgba(35,40,31,0.06), 0 4px 14px rgba(35,40,31,0.06);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background-color:var(--paper);
+  background-image: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 27px,
+      rgba(169,176,150,0.35) 28px
+    );
+  color:var(--ink);
+  font-family:'IBM Plex Sans', sans-serif;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+
+.app{
+  position:relative;
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 28px 80px 56px;
+}
+
+.margin-rule{
+  position:absolute;
+  top:0;
+  bottom:0;
+  left:34px;
+  width:2px;
+  background:var(--margin-red);
+  opacity:0.55;
+}
+@media (max-width:680px){
+  .margin-rule{display:none;}
+  .app{padding:0 16px 60px 16px;}
+}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:18px;
+  padding:36px 0 20px 0;
+  border-bottom:2px solid var(--rule-strong);
+}
+.brand{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+.brand-mark{
+  font-family:'Special Elite', monospace;
+  font-size:34px;
+  letter-spacing:2px;
+  color:var(--accent);
+}
+.brand-sub{
+  font-family:'Roboto Slab', serif;
+  font-size:14px;
+  font-weight:500;
+  color:var(--ink-soft);
+  letter-spacing:0.3px;
+  border-left:2px solid var(--rule-strong);
+  padding-left:14px;
+}
+.identity{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  flex-wrap:wrap;
+}
+.session-card{
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  text-align:right;
+}
+.session-card .who{font-weight:700; font-size:14px;}
+.session-card .role{font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.6px;}
+.identity-actions{display:flex; gap:8px;}
+
+label{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:1.4px;
+  color:var(--ink-soft);
+  font-weight:600;
+}
+select, input, textarea{
+  font-family:'IBM Plex Sans', sans-serif;
+  font-size:14.5px;
+  color:var(--ink);
+  background:var(--paper-raised);
+  border:1.5px solid var(--rule-strong);
+  border-radius:3px;
+  padding:9px 11px;
+}
+select:focus, input:focus, textarea:focus{
+  outline:2px solid var(--accent);
+  outline-offset:1px;
+}
+
+/* ---------- Tabs ---------- */
+.tabs{
+  display:flex;
+  gap:2px;
+  margin-top:22px;
+  flex-wrap:wrap;
+}
+.tab{
+  font-family:'Roboto Slab', serif;
+  font-weight:600;
+  font-size:13.5px;
+  letter-spacing:0.2px;
+  background:transparent;
+  border:none;
+  border-bottom:3px solid transparent;
+  color:var(--ink-soft);
+  padding:12px 18px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.tab:hover{color:var(--ink);}
+.tab.active{
+  color:var(--accent);
+  border-bottom-color:var(--accent);
+}
+.tab .count{
+  background:var(--rule-strong);
+  color:var(--paper-raised);
+  border-radius:10px;
+  padding:1px 8px;
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11px;
+}
+.tab.active .count{background:var(--accent);}
+
+.tabs.subtabs{
+  margin-top:0;
+  margin-bottom:22px;
+  gap:8px;
+  border-bottom:1px solid var(--rule);
+  padding-bottom:14px;
+}
+.tabs.subtabs .tab{
+  background:var(--paper-raised);
+  border:1px solid var(--rule-strong);
+  border-bottom:1px solid var(--rule-strong);
+  border-radius:16px;
+  padding:7px 14px;
+  font-size:12.5px;
+}
+.tabs.subtabs .tab.active{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:var(--white);
+}
+.tabs.subtabs .tab.active .count{background:rgba(255,255,255,0.25); color:var(--white);}
+
+main{padding-top:26px;}
+
+.panel-title{
+  font-family:'Roboto Slab', serif;
+  font-size:22px;
+  font-weight:700;
+  margin:0 0 4px 0;
+}
+.panel-sub{
+  color:var(--ink-soft);
+  font-size:14px;
+  margin:0 0 24px 0;
+  max-width:640px;
+  line-height:1.5;
+}
+
+/* ---------- Card / surfaces ---------- */
+.surface{
+  background:var(--paper-raised);
+  border:1px solid var(--rule);
+  border-radius:6px;
+  box-shadow:var(--shadow);
+}
+
+/* ---------- Login screen ---------- */
+.login-wrap{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.login-card{
+  width:100%;
+  max-width:400px;
+  padding:34px 32px 30px 32px;
+}
+.login-brand{
+  text-align:center;
+  margin-bottom:22px;
+}
+.login-brand .brand-mark{display:block; font-size:38px;}
+.login-brand .brand-sub{border-left:none; padding-left:0; display:block; margin-top:4px;}
+.login-field{display:flex; flex-direction:column; gap:6px; margin-bottom:16px;}
+.login-field select, .login-field input{width:100%; padding:11px 12px; font-size:15px;}
+.login-error{
+  background:var(--rejected-soft);
+  color:var(--rejected);
+  border:1px solid var(--rejected);
+  border-radius:4px;
+  padding:9px 12px;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:14px;
+}
+.login-hint{
+  font-size:12px;
+  color:var(--ink-soft);
+  margin-top:16px;
+  line-height:1.6;
+  text-align:center;
+}
+button.primary.wide{width:100%; padding:12px; font-size:14.5px;}
+
+/* ---------- Dashboard ---------- */
+.stat-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+  gap:12px;
+  margin-bottom:28px;
+}
+.stat-card{
+  padding:16px 18px;
+  border-left:4px solid var(--accent);
+}
+.stat-card .num{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:26px;
+  font-weight:600;
+}
+.stat-card .lbl{
+  font-size:12px;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  letter-spacing:0.8px;
+  margin-top:2px;
+}
+.stat-card.pending{border-color:var(--pending);}
+.stat-card.approved{border-color:var(--approved);}
+.stat-card.hold{border-color:var(--hold);}
+.stat-card.rejected{border-color:var(--rejected);}
+
+.dept-load{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(210px,1fr));
+  gap:10px;
+  margin-bottom:30px;
+}
+.dept-load-item{
+  padding:12px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.dept-load-item .name{font-size:13.5px; font-weight:600;}
+.dept-load-item .n{
+  font-family:'IBM Plex Mono', monospace;
+  background:var(--accent-soft);
+  color:var(--accent);
+  border-radius:12px;
+  padding:2px 10px;
+  font-size:13px;
+  font-weight:600;
+}
+
+.section-h{
+  font-family:'Roboto Slab', serif;
+  font-size:15px;
+  font-weight:700;
+  margin:0 0 12px 0;
+  color:var(--ink);
+}
+
+.feed{padding:6px 0;}
+.feed-item{
+  display:flex;
+  gap:12px;
+  padding:12px 18px;
+  border-bottom:1px dashed var(--rule);
+  font-size:13.5px;
+  align-items:baseline;
+}
+.feed-item:last-child{border-bottom:none;}
+.feed-item .time{
+  font-family:'IBM Plex Mono', monospace;
+  color:var(--ink-soft);
+  font-size:11.5px;
+  white-space:nowrap;
+  min-width:76px;
+}
+.empty{
+  padding:40px 24px;
+  text-align:center;
+  color:var(--ink-soft);
+  font-size:14px;
+  line-height:1.6;
+}
+.empty b{color:var(--ink); display:block; font-family:'Roboto Slab',serif; font-size:16px; margin-bottom:6px;}
+
+/* ---------- Form ---------- */
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px 20px;
+  padding:26px;
+}
+.field{display:flex; flex-direction:column; gap:6px;}
+.field.full{grid-column:1 / -1;}
+.field label{
+  font-size:12px;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.6px;
+  color:var(--ink-soft);
+}
+.field .hint{font-size:11.5px; color:var(--ink-soft); font-weight:400; text-transform:none; letter-spacing:0;}
+textarea{resize:vertical; min-height:64px; font-family:'IBM Plex Sans',sans-serif;}
+.form-actions{
+  grid-column:1/-1;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-top:6px;
+  border-top:1px solid var(--rule);
+  margin-top:4px;
+}
+.form-note{font-size:12.5px; color:var(--ink-soft);}
+
+button.primary{
+  font-family:'Roboto Slab', serif;
+  font-weight:600;
+  font-size:14px;
+  background:var(--accent);
+  color:var(--white);
+  border:none;
+  border-radius:4px;
+  padding:11px 22px;
+  cursor:pointer;
+}
+button.primary:hover{background:#3d3368;}
+button.ghost{
+  font-family:'IBM Plex Sans', sans-serif;
+  font-weight:600;
+  font-size:13px;
+  background:transparent;
+  color:var(--ink-soft);
+  border:1.5px solid var(--rule-strong);
+  border-radius:4px;
+  padding:9px 16px;
+  cursor:pointer;
+}
+button.ghost:hover{border-color:var(--ink-soft); color:var(--ink);}
+button.small{padding:6px 12px; font-size:12.5px;}
+button.link{
+  background:none; border:none; cursor:pointer;
+  font-family:'IBM Plex Sans',sans-serif; font-size:12.5px; font-weight:600;
+  color:var(--accent); text-decoration:underline; padding:4px 0;
+}
+
+.notice{
+  display:none;
+  background:var(--approved-soft);
+  color:var(--approved);
+  border:1px solid var(--approved);
+  border-radius:4px;
+  padding:10px 14px;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:16px;
+}
+.notice.show{display:block;}
+.notice.error{background:var(--rejected-soft); color:var(--rejected); border-color:var(--rejected);}
+
+.role-block{
+  padding:40px 24px;
+  text-align:center;
+}
+
+/* ---------- Bill list / cards ---------- */
+.filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:18px;
+}
+.filters input, .filters select{padding:8px 10px; font-size:13px;}
+.filters input{flex:1; min-width:180px;}
+
+.bulk-bar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+  padding:12px 18px;
+  margin-bottom:14px;
+  border-left:4px solid var(--accent);
+}
+.bulk-select-all{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.bulk-select{padding:8px 10px; font-size:13px; min-width:180px;}
+.bulk-remark{padding:8px 10px; font-size:13px; flex:1; min-width:200px;}
+.bill-check{
+  display:flex;
+  align-items:center;
+  padding-top:2px;
+  cursor:pointer;
+}
+.bill-check input{cursor:pointer; width:16px; height:16px;}
+
+.bill-card{
+  border-bottom:1px solid var(--rule);
+  padding:16px 20px;
+}
+.bill-card:last-child{border-bottom:none;}
+.bill-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  cursor:pointer;
+  flex-wrap:wrap;
+}
+.bill-id{
+  font-family:'IBM Plex Mono', monospace;
+  font-size:11.5px;
+  color:var(--ink-soft);
+}
+.bill-title{
+  font-weight:600;
+  font-size:15px;
+  margin-top:2px;
+}
+.bill-meta{
+  font-size:12.5px;
+  color:var(--ink-soft);
+  margin-top:3px;
+}
+.bill-amount{
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:600;
+  font-size:16px;
+  white-space:nowrap;
+}
+.pill{
+  display:inline-block;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  padding:4px 10px;
+  border-radius:11px;
+  white-space:nowrap;
+}
+.pill.pending{background:var(--pending-soft); color:var(--pending);}
+.pill.approved{background:var(--approved-soft); color:var(--approved);}
+.pill.hold{background:var(--hold-soft); color:var(--hold);}
+.pill.rejected{background:var(--rejected-soft); color:var(--rejected);}
+.pill.due-ontrack{background:var(--paper-deep); color:var(--ink-soft);}
+.pill.due-duesoon{background:var(--hold-soft); color:var(--hold);}
+.pill.due-overdue{background:var(--rejected-soft); color:var(--rejected); font-weight:700;}
+
+.bill-detail{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px dashed var(--rule);
+  display:none;
+}
+.bill-detail.open{display:block;}
+
+/* stamp trail */
+.trail{
+  display:flex;
+  align-items:flex-start;
+  gap:0;
+  overflow-x:auto;
+  padding:10px 2px 18px 2px;
+}
+.trail-node{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  min-width:104px;
+  position:relative;
+}
+.trail-node:not(:last-child)::after{
+  content:'';
+  position:absolute;
+  top:26px;
+  left:calc(50% + 30px);
+  width:calc(100% - 12px);
+  border-top:2px dashed var(--rule-strong);
+}
+.stamp{
+  width:54px; height:54px;
+  border-radius:50%;
+  border:2.5px solid currentColor;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'IBM Plex Mono', monospace;
+  font-weight:700;
+  font-size:12px;
+  letter-spacing:0.3px;
+  position:relative;
+  z-index:1;
+  background:var(--paper-raised);
+}
+.stamp::before{
+  content:'';
+  position:absolute;
+  inset:5px;
+  border-radius:50%;
+  border:1px dotted currentColor;
+  opacity:0.6;
+}
+.stamp.c-pending{color:var(--pending);}
+.stamp.c-hold{color:var(--hold);}
+.stamp.c-approved{color:var(--approved);}
+.stamp.c-rejected{color:var(--rejected);}
+
+.trail-label{
+  margin-top:8px;
+  font-size:11px;
+  text-align:center;
+  color:var(--ink);
+  font-weight:600;
+  line-height:1.3;
+  max-width:100px;
+}
+.trail-date{
+  font-size:10.5px;
+  color:var(--ink-soft);
+  font-family:'IBM Plex Mono', monospace;
+  margin-top:2px;
+}
+.trail-remark{
+  font-size:10.5px;
+  color:var(--ink-soft);
+  margin-top:3px;
+  font-style:italic;
+  max-width:104px;
+  text-align:center;
+  line-height:1.3;
+}
+
+.bill-desc{
+  font-size:13px;
+  color:var(--ink-soft);
+  background:var(--paper);
+  border-radius:4px;
+  padding:10px 12px;
+  margin-bottom:16px;
+  line-height:1.5;
+}
+
+.action-box{
+  background:var(--accent-soft);
+  border-radius:5px;
+  padding:16px;
+  border:1px solid #d8d0ef;
+}
+.action-box .section-h{color:var(--accent);}
+.action-box.ack-box{background:var(--hold-soft); border-color:var(--hold);}
+.action-box.ack-box .section-h{color:var(--hold);}
+.action-box.payment-box{background:var(--approved-soft); border-color:var(--approved);}
+.action-box.payment-box .section-h{color:var(--approved);}
+.action-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  margin-top:10px;
+}
+.action-row .field{min-width:200px;}
+.btn-row{display:flex; gap:8px; flex-wrap:wrap;}
+
+/* ---------- Manage logins (admin) ---------- */
+.user-table{width:100%; border-collapse:collapse;}
+.user-table th{
+  text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.6px;
+  color:var(--ink-soft); padding:10px 18px; border-bottom:1px solid var(--rule-strong);
+}
+.user-table td{padding:11px 18px; border-bottom:1px solid var(--rule); font-size:13.5px; vertical-align:middle;}
+.user-table tr:last-child td{border-bottom:none;}
+.role-tag{
+  font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px;
+  background:var(--paper-deep); color:var(--ink-soft); padding:3px 8px; border-radius:9px;
+}
+
+.pw-panel{
+  padding:18px 22px;
+  max-width:380px;
+}
+.pw-panel .field{margin-bottom:12px;}
+
+footer{
+  margin-top:50px;
+  padding-top:18px;
+  border-top:1px solid var(--rule);
+  font-size:11.5px;
+  color:var(--ink-soft);
+  line-height:1.6;
+}
+
+@media (max-width:680px){
+  .form-grid{grid-template-columns:1fr;}
+  .brand-mark{font-size:26px;}
+}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/* ---------------- Supabase ---------------- */
+// Replace these two values with your own project's URL and anon (public) key,
+// found in Supabase → Project Settings → API.
+const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ---------------- constants ---------------- */
+const BRANCHES = ["Trivandrum","Pothencode","Attingal","Kasaragod","Kanhangad","Theni","Vellore","Ramnad","Cuddalore","Pondicherry"];
+
+const BRANCH_SUBDEPTS = [
+  {id:'accounts',  name:'Accounts Department'},
+  {id:'marketing', name:'Marketing Department'}
+];
+
+const DEPARTMENTS = [
+  {id:'finance',    name:'Finance Department',        code:'FIN', canEnterBills:true},
+  {id:'marketing',  name:'Marketing Department',      code:'MKT', canEnterBills:true},
+  {id:'audit',      name:'Audit Department',          code:'AUD', canEnterBills:false},
+  {id:'gm',         name:'General Manager',           code:'GM',  canEnterBills:false},
+  {id:'management', name:'Approved by Management',    code:'MGT', canEnterBills:false}
+];
+
+const BILLS_KEY = 'billdak-bills-v1';
+const USERS_KEY = 'billdak-users-v1';
+const DEFAULT_PASSWORD = '0000';
+const APPROVAL_SLA_DAYS = 3; // max days a department has to approve, reject or mark on a bill
+
+/* ---------------- state ---------------- */
+let bills = [];
+let users = {};
+let dataLoaded = false;
+let session = null; // {id, type:'branch'|'department'|'admin', name}
+let tab = 'dashboard';
+let expandedId = null;
+let trackFilters = {q:'', status:'all', dept:'all'};
+let loginError = '';
+let loginType = '';
+let loginSpecific = '';
+let loginBranchDept = '';
+let pwPanelOpen = false;
+let pwError = '';
+let importRows = [];
+let importFileName = '';
+let deptTab = DEPARTMENTS[0].id;
+let editingBillId = null;
+let selectedBillIds = new Set();
+
+/* ---------------- helpers ---------------- */
+function deptById(id){ return DEPARTMENTS.find(d=>d.id===id); }
+function uid(p){ return p+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7); }
+function fmtMoney(n){ return '₹' + Number(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}); }
+function fmtDateTime(iso){ const d=new Date(iso); return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' · ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
+function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function roleLabel(type){ return type==='branch'?'Branch':(type==='admin'?'Administrator':'Corporate'); }
+function canEnterBills(){
+  if(session.type==='branch') return true;
+  if(session.type==='department'){
+    const d = deptById(session.id);
+    return !!(d && d.canEnterBills);
+  }
+  return false;
+}
+
+/* ---------------- default users ---------------- */
+function buildDefaultUsers(){
+  const u = {};
+  BRANCHES.forEach(b=>{
+    BRANCH_SUBDEPTS.forEach(sd=>{
+      const key = b + '::' + sd.id;
+      u[key] = {password:DEFAULT_PASSWORD, type:'branch', name: b + ' — ' + sd.name, branch:b, branchDept:sd.id};
+    });
+  });
+  DEPARTMENTS.forEach(d=>{ u[d.id] = {password:DEFAULT_PASSWORD, type:'department', name:d.name}; });
+  u['admin'] = {password:DEFAULT_PASSWORD, type:'admin', name:'Administrator'};
+  return u;
+}
+
+/* ---------------- persistence ---------------- */
+async function kvGet(key){
+  const { data, error } = await sb.from('app_kv').select('value').eq('key', key).maybeSingle();
+  if(error){ console.error('Supabase read error', error); return null; }
+  return data ? data.value : null;
+}
+async function kvSet(key, value){
+  const { error } = await sb.from('app_kv').upsert({ key, value, updated_at: new Date().toISOString() });
+  if(error) console.error('Supabase write error', error);
+}
+async function loadAll(){
+  try{
+    const v = await kvGet(BILLS_KEY);
+    bills = v || [];
+  }catch(e){ bills = []; }
+
+  try{
+    const v = await kvGet(USERS_KEY);
+    if(v){
+      users = v;
+    }else{
+      users = buildDefaultUsers();
+      await kvSet(USERS_KEY, users);
+    }
+  }catch(e){
+    users = buildDefaultUsers();
+  }
+  dataLoaded = true;
+}
+async function saveBills(){ try{ await kvSet(BILLS_KEY, bills); }catch(e){ console.error(e); } }
+async function saveUsers(){ try{ await kvSet(USERS_KEY, users); }catch(e){ console.error(e); } }
+
+let flashTimer=null;
+function flashNotice(msg, isError){
+  const el = document.getElementById('flashNotice');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.toggle('error', !!isError);
+  el.classList.add('show');
+  clearTimeout(flashTimer);
+  flashTimer = setTimeout(()=>el.classList.remove('show'), 3200);
+}
+
+/* ---------------- bill mutations ---------------- */
+function setDueDate(bill){
+  bill.dueAt = new Date(Date.now() + APPROVAL_SLA_DAYS*24*60*60*1000).toISOString();
+}
+function dueInfo(bill){
+  if(bill.status!=='with_department' || !bill.dueAt) return null;
+  const diffMs = new Date(bill.dueAt) - Date.now();
+  const diffDays = Math.ceil(diffMs / (24*60*60*1000));
+  if(diffDays < 0) return {label:'Overdue by ' + Math.abs(diffDays) + ' day' + (Math.abs(diffDays)===1?'':'s'), cls:'overdue'};
+  if(diffDays === 0) return {label:'Due today', cls:'duesoon'};
+  if(diffDays === 1) return {label:'Due tomorrow', cls:'duesoon'};
+  return {label:'Due in ' + diffDays + ' days', cls:'ontrack'};
+}
+function submitBill(data){
+  const bill = {
+    id: uid('BL'),
+    billNo: data.billNo,
+    branch: session.name,
+    originType: session.type,                                  // 'branch' or 'department'
+    originId: session.type==='branch' ? session.name : session.id,
+    vendor: data.vendor,
+    amount: parseFloat(data.amount),
+    billDate: data.billDate,
+    description: data.description,
+    currentHolder: data.department,
+    status: 'with_department',
+    acknowledged: false,
+    createdAt: new Date().toISOString(),
+    dueAt: new Date(Date.now() + APPROVAL_SLA_DAYS*24*60*60*1000).toISOString(),
+    history: [{
+      actorType: session.type, actorName:session.name, actorDeptId: session.type==='department' ? session.id : null,
+      action:'submitted', toDept:data.department, remarks: data.remarks||'',
+      at: new Date().toISOString()
+    }]
+  };
+  bills.unshift(bill);
+}
+/* ---------------- excel import ---------------- */
+function excelDateToStr(v){
+  if(v instanceof Date && !isNaN(v)){
+    const y=v.getFullYear(), m=String(v.getMonth()+1).padStart(2,'0'), d=String(v.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
+  }
+  if(typeof v === 'number' && window.XLSX && XLSX.SSF){
+    try{
+      const d = XLSX.SSF.parse_date_code(v);
+      if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
+    }catch(e){}
+  }
+  if(typeof v === 'string'){
+    const s = v.trim();
+    let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if(m) return `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+    m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+    if(s){
+      const parsed = new Date(s);
+      if(!isNaN(parsed)) return excelDateToStr(parsed);
+    }
+  }
+  return null;
+}
+function validateImportRow(raw){
+  const errors=[];
+  const billNo = String(raw['Bill No']||'').trim();
+  const vendor = String(raw['Party']||'').trim();
+  const departmentRaw = String(raw['Department']||'').trim();
+  const amount = parseFloat(raw['Amount']);
+  const billDate = excelDateToStr(raw['Bill Date']);
+  const description = String(raw['Description']||'').trim();
+  const remarks = String(raw['Remarks']||'').trim();
+  const department = DEPARTMENTS.find(d=> d.name.toLowerCase()===departmentRaw.toLowerCase() || d.code.toLowerCase()===departmentRaw.toLowerCase());
+
+  if(!billNo) errors.push('Missing Bill No');
+  if(!vendor) errors.push('Missing Party');
+  if(isNaN(amount) || amount<=0) errors.push('Invalid Amount');
+  if(!billDate) errors.push('Invalid or missing Bill Date');
+  if(!department) errors.push('Department must be one of: ' + DEPARTMENTS.map(d=>d.name).join(', '));
+  else if(session.type==='department' && department.id===session.id) errors.push('Cannot send a bill to your own department');
+  if(!description) errors.push('Missing Description');
+
+  return {
+    raw,
+    parsed:{billNo, vendor, amount, billDate, department: department?department.id:'', departmentName: department?department.name:departmentRaw, description, remarks},
+    errors,
+    valid: errors.length===0
+  };
+}
+function handleExcelFile(file){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      importRows = rows.map(validateImportRow);
+      importFileName = file.name;
+      if(!importRows.length) flashNotice('That file has no rows to import.', true);
+    }catch(err){
+      importRows = [];
+      importFileName = '';
+      flashNotice('Could not read that file. Make sure it is a .xlsx or .xls file saved from the template.', true);
+    }
+    render();
+  };
+  reader.readAsArrayBuffer(file);
+}
+function downloadTemplate(){
+  const headers = ['Bill No','Bill Date','Party','Amount','Department','Description','Remarks'];
+  const example = ['INV-1001','09-07-2026','Sree Traders',1250,'Marketing Department','Diwali hoarding printing','Urgent - festival deadline'];
+  const ws = XLSX.utils.aoa_to_sheet([headers, example]);
+  ws['!cols'] = [{wch:14},{wch:12},{wch:22},{wch:12},{wch:20},{wch:34},{wch:26}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Bills');
+  XLSX.writeFile(wb, 'bill-import-template.xlsx');
+}
+function clearImport(){ importRows=[]; importFileName=''; render(); }
+async function confirmImport(){
+  const validRows = importRows.filter(r=>r.valid);
+  if(!validRows.length) return;
+  validRows.forEach(r=>{
+    const data = {...r.parsed};
+    data.remarks = data.remarks ? data.remarks + ' (Imported from Excel)' : 'Imported from Excel';
+    submitBill(data);
+  });
+  const skipped = importRows.length - validRows.length;
+  importRows = [];
+  importFileName = '';
+  await persistAndRender(
+    `Imported ${validRows.length} bill${validRows.length===1?'':'s'}.` +
+    (skipped ? ` ${skipped} row${skipped===1?'':'s'} skipped — fix and re-upload if needed.` : '')
+  );
+}
+
+function addHistory(bill, action, toDept, remarks){
+  bill.history.push({
+    actorType:session.type==='admin' ? 'admin' : session.type,
+    actorName:session.name,
+    actorDeptId: session.type==='department' ? session.id : null,
+    action, toDept: toDept||null, remarks: remarks||'',
+    at: new Date().toISOString()
+  });
+}
+function markForward(billId, toDeptId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  // GM's only outlet is Finance, who takes it to Management for approval
+  if(session.type==='department' && session.id==='gm') toDeptId = 'finance';
+  bill.currentHolder = toDeptId;
+  bill.status = 'with_department';
+  bill.acknowledged = false;
+  setDueDate(bill);
+  addHistory(bill, 'marked_to', toDeptId, remarks);
+}
+function acknowledgeBill(billId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  bill.acknowledged = true;
+  addHistory(bill, 'acknowledged', bill.currentHolder, remarks);
+}
+function returnToOrigin(billId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  bill.returnedFromDept = bill.currentHolder; // remember who sent it back, so a resubmit goes right back to them
+  bill.status = 'returned_to_branch';
+  bill.currentHolder = bill.originType==='branch' ? ('branch:'+bill.originId) : ('origin-dept:'+bill.originId);
+  bill.dueAt = null;
+  addHistory(bill, 'returned_to_branch', null, remarks);
+}
+function resubmit(billId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  const backTo = bill.returnedFromDept || DEPARTMENTS[0].id;
+  bill.status = 'with_department';
+  bill.acknowledged = false;
+  bill.currentHolder = backTo;
+  setDueDate(bill);
+  addHistory(bill, 'resubmitted', backTo, remarks);
+}
+function approveBill(billId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  bill.status = 'approved';
+  bill.currentHolder = 'finance'; // final approval routes straight to Finance for payment
+  bill.dueAt = null;
+  addHistory(bill, 'approved', 'finance', remarks);
+}
+function rejectBill(billId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  bill.returnedFromDept = bill.currentHolder;
+  bill.status = 'rejected';
+  bill.dueAt = null;
+  addHistory(bill, 'rejected', null, remarks);
+}
+function resubmitRejected(billId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  const backTo = bill.returnedFromDept || DEPARTMENTS[0].id;
+  bill.status = 'with_department';
+  bill.acknowledged = false;
+  bill.currentHolder = backTo;
+  setDueDate(bill);
+  addHistory(bill, 'resubmitted', backTo, remarks);
+}
+function recordPayment(billId, data){
+  const bill = bills.find(b=>b.id===billId);
+  bill.status = 'paid';
+  bill.payment = {
+    type: data.paymentType,
+    bankAccount: data.bankAccount,
+    reference: data.reference || '',
+    paidOn: data.paidOn,
+    recordedBy: session.name,
+    recordedAt: new Date().toISOString()
+  };
+  addHistory(bill, 'paid', null, `Paid via ${data.paymentType} from ${data.bankAccount} on ${data.paidOn}` + (data.reference ? ` (Ref: ${data.reference})` : ''));
+}
+function sendToBranchForPayment(billId, remarks){
+  const bill = bills.find(b=>b.id===billId);
+  bill.paymentAtBranch = true;
+  bill.currentHolder = 'branch:'+bill.originId;
+  addHistory(bill, 'sent_for_branch_payment', null, remarks);
+}
+function editBill(billId, data){
+  const bill = bills.find(b=>b.id===billId);
+  bill.billNo = data.billNo;
+  bill.billDate = data.billDate;
+  bill.vendor = data.vendor;
+  bill.amount = parseFloat(data.amount);
+  bill.description = data.description;
+}
+async function persistAndRender(msg){
+  await saveBills();
+  render();
+  if(msg) flashNotice(msg);
+}
+
+/* ---------------- query helpers ---------------- */
+function isInMyQueue(bill){
+  if(session.type==='department'){
+    const asProcessor = bill.status==='with_department' && bill.currentHolder===session.id;
+    const asOriginReturned = (bill.status==='returned_to_branch' || bill.status==='rejected') && bill.originType==='department' && bill.originId===session.id;
+    const asPaymentHandler = session.id==='finance' && bill.status==='approved' && bill.currentHolder==='finance';
+    return asProcessor || asOriginReturned || asPaymentHandler;
+  }
+  if(session.type==='branch'){
+    const asOriginReturned = (bill.status==='returned_to_branch' || bill.status==='rejected') && bill.originType==='branch' && bill.originId===session.name;
+    const asPaymentHandler = bill.status==='approved' && bill.currentHolder==='branch:'+session.name;
+    return asOriginReturned || asPaymentHandler;
+  }
+  return false;
+}
+function isMyBill(bill){
+  if(session.type==='branch') return bill.originType==='branch' && bill.originId===session.name;
+  if(session.type==='department') return bill.originType==='department' && bill.originId===session.id;
+  return false;
+}
+function isProcessorItem(bill){
+  return session.type==='department' && bill.status==='with_department' && bill.currentHolder===session.id && bill.acknowledged;
+}
+function isIncomingItem(bill){
+  return session.type==='department' && bill.status==='with_department' && bill.currentHolder===session.id && !bill.acknowledged;
+}
+function isPaymentItem(bill){
+  if(bill.status!=='approved') return false;
+  if(session.type==='department') return session.id==='finance' && bill.currentHolder==='finance';
+  if(session.type==='branch') return bill.currentHolder==='branch:'+session.name;
+  return false;
+}
+function myProcessorBillIds(){
+  return bills.filter(isProcessorItem).map(b=>b.id);
+}
+function visibleBills(){
+  // scope: branches only ever see bills they personally submitted. departments & admin see everything.
+  if(session.type==='branch') return bills.filter(b=>b.originType==='branch' && b.originId===session.name);
+  return bills.slice();
+}
+function statusInfo(bill){
+  if(bill.status==='paid') return {label:'Paid', cls:'approved'};
+  if(bill.status==='approved'){
+    if(bill.currentHolder && bill.currentHolder.startsWith('branch:')) return {label:'Approved — Payment Pending (Branch)', cls:'hold'};
+    return {label:'Approved — Payment Pending (Finance)', cls:'hold'};
+  }
+  if(bill.status==='rejected') return {label:'Rejected by '+(deptById(bill.returnedFromDept)?.name || 'department'), cls:'rejected'};
+  if(bill.status==='returned_to_branch') return {label:'Returned to '+bill.branch, cls:'hold'};
+  const d = deptById(bill.currentHolder);
+  const base = 'With ' + (d?d.name:bill.currentHolder);
+  return {label: bill.acknowledged ? base : base + ' (unacknowledged)', cls:'pending'};
+}
+function actionClass(action){
+  if(action==='approved' || action==='paid') return 'c-approved';
+  if(action==='rejected') return 'c-rejected';
+  if(action==='returned_to_branch' || action==='sent_for_branch_payment') return 'c-hold';
+  return 'c-pending';
+}
+function actionLabel(h){
+  switch(h.action){
+    case 'submitted': return 'Submitted to ' + (deptById(h.toDept)?.name || h.toDept);
+    case 'acknowledged': return 'Acknowledged by ' + (deptById(h.toDept)?.name || h.toDept);
+    case 'resubmitted': return 'Resubmitted to ' + (deptById(h.toDept)?.name || h.toDept);
+    case 'verified_and_marked': return 'Verified, marked to ' + (deptById(h.toDept)?.name || h.toDept);
+    case 'marked_to': return 'Marked to ' + (deptById(h.toDept)?.name || h.toDept);
+    case 'returned_to_branch': return 'Returned for correction';
+    case 'approved': return 'Approved — sent to Finance for payment';
+    case 'rejected': return 'Rejected';
+    case 'sent_for_branch_payment': return 'Sent to branch for payment';
+    case 'paid': return 'Payment recorded';
+    default: return h.action;
+  }
+}
+function stampCode(h){
+  if(h.actorType==='branch') return h.actorName.slice(0,3).toUpperCase();
+  if(h.actorType==='admin') return 'ADM';
+  const d = deptById(h.actorDeptId);
+  return d ? d.code : '???';
+}
+
+/* ================= LOGIN SCREEN ================= */
+function renderLogin(){
+  const showSpecific = loginType==='branch' || loginType==='department';
+  const showBranchDept = loginType==='branch' && loginSpecific;
+  const showPassword = loginType==='admin'
+    || (loginType==='department' && loginSpecific)
+    || (loginType==='branch' && loginSpecific && loginBranchDept);
+
+  let specificOptionsHtml = '';
+  if(loginType==='branch'){
+    specificOptionsHtml = BRANCHES.map(b=>`<option value="${escapeHtml(b)}" ${loginSpecific===b?'selected':''}>${escapeHtml(b)}</option>`).join('');
+  }else if(loginType==='department'){
+    specificOptionsHtml = DEPARTMENTS.map(d=>`<option value="${d.id}" ${loginSpecific===d.id?'selected':''}>${escapeHtml(d.name)}</option>`).join('');
+  }
+  const branchDeptOptionsHtml = BRANCH_SUBDEPTS.map(sd=>`<option value="${sd.id}" ${loginBranchDept===sd.id?'selected':''}>${escapeHtml(sd.name)}</option>`).join('');
+
+  document.getElementById('root').innerHTML = `
+    <div class="login-wrap">
+      <div class="surface login-card">
+        <div class="login-brand">
+          <span class="brand-mark">DĀK</span>
+          <span class="brand-sub">Bill Movement &amp; Approval Register</span>
+        </div>
+        ${loginError ? `<div class="login-error">${escapeHtml(loginError)}</div>` : ''}
+        <form id="loginForm">
+          <div class="login-field">
+            <label>Login type</label>
+            <select id="loginTypeSelect">
+              <option value="" disabled ${!loginType?'selected':''}>Select login type</option>
+              <option value="branch" ${loginType==='branch'?'selected':''}>Branch</option>
+              <option value="department" ${loginType==='department'?'selected':''}>Corporate</option>
+              <option value="admin" ${loginType==='admin'?'selected':''}>Admin</option>
+            </select>
+          </div>
+          ${showSpecific ? `
+          <div class="login-field">
+            <label>${loginType==='branch' ? 'Select branch' : 'Select corporate department'}</label>
+            <select id="loginSpecificSelect">
+              <option value="" disabled ${!loginSpecific?'selected':''}>Select ${loginType==='branch' ? 'branch' : 'department'}</option>
+              ${specificOptionsHtml}
+            </select>
+          </div>` : ''}
+          ${showBranchDept ? `
+          <div class="login-field">
+            <label>Which department of the branch?</label>
+            <select id="loginBranchDeptSelect">
+              <option value="" disabled ${!loginBranchDept?'selected':''}>Select department</option>
+              ${branchDeptOptionsHtml}
+            </select>
+          </div>` : ''}
+          ${showPassword ? `
+          <div class="login-field">
+            <label>Password</label>
+            <input type="password" id="loginPass" required placeholder="Password">
+          </div>
+          <button type="submit" class="primary wide">Log in</button>
+          ` : ''}
+        </form>
+        <p class="login-hint">Each branch department, corporate department and the admin account has its own login.<br>Default password for every login is <b>0000</b> until changed.</p>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('loginTypeSelect').addEventListener('change', (e)=>{
+    loginType = e.target.value;
+    loginSpecific = '';
+    loginBranchDept = '';
+    loginError = '';
+    renderLogin();
+  });
+  const specificEl = document.getElementById('loginSpecificSelect');
+  if(specificEl){
+    specificEl.addEventListener('change', (e)=>{
+      loginSpecific = e.target.value;
+      loginBranchDept = '';
+      loginError = '';
+      renderLogin();
+    });
+  }
+  const branchDeptEl = document.getElementById('loginBranchDeptSelect');
+  if(branchDeptEl){
+    branchDeptEl.addEventListener('change', (e)=>{
+      loginBranchDept = e.target.value;
+      loginError = '';
+      renderLogin();
+    });
+  }
+  const form = document.getElementById('loginForm');
+  if(form){
+    form.addEventListener('submit', (e)=>{
+      e.preventDefault();
+      let uname = '';
+      if(loginType==='admin') uname = 'admin';
+      else if(loginType==='department') uname = loginSpecific;
+      else if(loginType==='branch') uname = loginSpecific + '::' + loginBranchDept;
+      if(!uname || !users[uname]){ loginError = 'Complete the selection above first.'; renderLogin(); return; }
+      const passEl = document.getElementById('loginPass');
+      const pass = passEl ? passEl.value : '';
+      const rec = users[uname];
+      if(!rec || rec.password !== pass){
+        loginError = 'Incorrect selection or password.';
+        renderLogin();
+        return;
+      }
+      loginError = '';
+      session = {id: uname, type: rec.type, name: rec.name};
+      tab = 'dashboard';
+      loginType = ''; loginSpecific = ''; loginBranchDept = '';
+      renderApp();
+    });
+  }
+}
+
+/* ================= APP SHELL ================= */
+function renderApp(){
+  const root = document.getElementById('root');
+  root.innerHTML = `
+    <div class="app">
+      <div class="margin-rule"></div>
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">DĀK</span>
+          <span class="brand-sub">Bill Movement &amp; Approval Register</span>
+        </div>
+        <div class="identity">
+          <div class="session-card">
+            <span class="who">${escapeHtml(session.name)}</span>
+            <span class="role">${roleLabel(session.type)}</span>
+          </div>
+          <div class="identity-actions">
+            <button class="ghost small" id="btnChangePw">Change password</button>
+            <button class="ghost small" id="btnLogout">Log out</button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="tabs" id="tabs">
+        <button class="tab" data-tab="dashboard">Dashboard</button>
+        <button class="tab" data-tab="new">New Bill Entry</button>
+        <button class="tab" data-tab="queue">My Queue <span class="count" id="queueCount">0</span></button>
+        ${session.type!=='department' ? `<button class="tab" data-tab="departments">Departments</button>` : ''}
+        <button class="tab" data-tab="track">${session.type==='branch' ? 'My Bills' : 'Track All Bills'}</button>
+        ${session.type!=='branch' ? `<button class="tab" data-tab="mybills">My Logged Bills</button>` : ''}
+        ${session.type==='admin' ? `<button class="tab" data-tab="users">Manage Logins</button>` : ''}
+      </nav>
+
+      <div id="pwPanelWrap"></div>
+      <main id="content"></main>
+
+      <footer>
+        Shared register — every entry and mark-forward made here is visible to everyone permitted to see it: a showroom
+        only sees bills it has logged itself; departments and the admin login see bills as they move across branches.
+        Logins and passwords for this demo are kept in the same shared storage as the bills (not encrypted) — change
+        every login away from the default <b>0000</b> before relying on this for real records.
+      </footer>
+    </div>
+  `;
+
+  document.getElementById('btnLogout').addEventListener('click', ()=>{
+    session = null; pwPanelOpen=false; pwError=''; importRows=[]; importFileName='';
+    loginType=''; loginSpecific=''; loginBranchDept=''; loginError=''; selectedBillIds.clear();
+    renderLogin();
+  });
+  document.getElementById('btnChangePw').addEventListener('click', ()=>{
+    pwPanelOpen = !pwPanelOpen; pwError='';
+    render();
+  });
+  document.getElementById('tabs').addEventListener('click', (e)=>{
+    const btn = e.target.closest('.tab');
+    if(!btn) return;
+    tab = btn.dataset.tab;
+    expandedId = null;
+    selectedBillIds.clear();
+    render();
+  });
+
+  render();
+}
+
+/* ---------------- master render ---------------- */
+function render(){
+  if(!session) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  const queueN = bills.filter(isInMyQueue).length;
+  const qEl = document.getElementById('queueCount');
+  if(qEl) qEl.textContent = queueN;
+
+  const pwWrap = document.getElementById('pwPanelWrap');
+  pwWrap.innerHTML = pwPanelOpen ? renderPwPanel() : '';
+  if(pwPanelOpen) attachPwHandlers();
+
+  const content = document.getElementById('content');
+  if(!dataLoaded){
+    content.innerHTML = `<div class="surface empty"><b>Loading register…</b>Fetching the shared bill log.</div>`;
+    return;
+  }
+  if(tab==='dashboard') content.innerHTML = renderDashboard();
+  else if(tab==='new') content.innerHTML = renderNewBill();
+  else if(tab==='queue') content.innerHTML = renderQueue();
+  else if(tab==='departments') content.innerHTML = renderDepartments();
+  else if(tab==='track') content.innerHTML = renderTrack();
+  else if(tab==='mybills') content.innerHTML = renderMyLoggedBills();
+  else if(tab==='users' && session.type==='admin') content.innerHTML = renderUsers();
+
+  attachHandlers();
+}
+
+/* ---------------- change password panel ---------------- */
+function renderPwPanel(){
+  return `
+    <div class="surface pw-panel" style="margin-bottom:22px;">
+      <h4 class="section-h">Change password — ${escapeHtml(session.name)}</h4>
+      ${pwError ? `<div class="notice error show">${escapeHtml(pwError)}</div>` : ''}
+      <div class="field"><label>Current password</label><input type="password" id="pwCurrent"></div>
+      <div class="field"><label>New password</label><input type="password" id="pwNew"></div>
+      <div class="field"><label>Confirm new password</label><input type="password" id="pwConfirm"></div>
+      <div class="btn-row">
+        <button class="primary small" id="pwSave">Save password</button>
+        <button class="ghost small" id="pwCancel">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+function attachPwHandlers(){
+  document.getElementById('pwCancel').addEventListener('click', ()=>{ pwPanelOpen=false; render(); });
+  document.getElementById('pwSave').addEventListener('click', async ()=>{
+    const cur = document.getElementById('pwCurrent').value;
+    const nw = document.getElementById('pwNew').value;
+    const cf = document.getElementById('pwConfirm').value;
+    if(users[session.id].password !== cur){ pwError='Current password is incorrect.'; render(); return; }
+    if(!nw || nw.length<4){ pwError='New password must be at least 4 characters.'; render(); return; }
+    if(nw !== cf){ pwError='New password and confirmation do not match.'; render(); return; }
+    users[session.id].password = nw;
+    await saveUsers();
+    pwPanelOpen = false; pwError='';
+    render();
+    flashGlobal('Password updated.');
+  });
+}
+function flashGlobal(msg){
+  // brief top-of-content confirmation when no in-panel notice exists
+  const content = document.getElementById('content');
+  if(!content) return;
+  const banner = document.createElement('div');
+  banner.className = 'notice show';
+  banner.textContent = msg;
+  content.prepend(banner);
+  setTimeout(()=>banner.remove(), 3000);
+}
+
+/* ---------------- dashboard ---------------- */
+function renderDashboard(){
+  const scoped = visibleBills();
+  const total = scoped.length;
+  const pending = scoped.filter(b=>b.status==='with_department').length;
+  const held = scoped.filter(b=>b.status==='returned_to_branch').length;
+  const paymentPending = scoped.filter(b=>b.status==='approved').length;
+  const paid = scoped.filter(b=>b.status==='paid').length;
+  const rejected = scoped.filter(b=>b.status==='rejected').length;
+  const overdue = scoped.filter(b=>dueInfo(b)?.cls==='overdue').length;
+
+  let loadSection = '';
+  if(session.type!=='branch'){
+    const loadRows = DEPARTMENTS.map(d=>{
+      const deptBills = scoped.filter(b=>b.status==='with_department' && b.currentHolder===d.id);
+      const n = deptBills.length;
+      const overdueN = deptBills.filter(b=>dueInfo(b)?.cls==='overdue').length;
+      return `<div class="surface dept-load-item"><span class="name">${d.name}</span><span class="n">${n}${overdueN?` <span style="color:var(--rejected);">· ${overdueN} overdue</span>`:''}</span></div>`;
+    }).join('');
+    loadSection = `<h3 class="section-h">Bills currently held, by department <span class="form-note">— each department has ${APPROVAL_SLA_DAYS} days to act on a bill</span></h3><div class="dept-load">${loadRows}</div>`;
+  }
+
+  const feedItems = scoped
+    .flatMap(b=>b.history.map(h=>({...h, billNo:b.billNo})))
+    .sort((a,b)=> new Date(b.at)-new Date(a.at))
+    .slice(0,10);
+
+  const feedHtml = feedItems.length ? feedItems.map(h=>`
+    <div class="feed-item">
+      <span class="time">${fmtDateTime(h.at)}</span>
+      <span><b>${escapeHtml(h.actorName)}</b> — ${actionLabel(h)} <span style="color:var(--ink-soft)">on bill</span> <span style="font-family:'IBM Plex Mono',monospace">${escapeHtml(h.billNo)}</span></span>
+    </div>
+  `).join('') : `<div class="empty">No activity yet.</div>`;
+
+  const introText = session.type==='branch'
+    ? `Everything ${escapeHtml(session.name)} has logged into the register.`
+    : `Everything moving through the register, at a glance.`;
+
+  return `
+    <h2 class="panel-title">Register overview</h2>
+    <p class="panel-sub">${introText}</p>
+    <div class="stat-grid">
+      <div class="surface stat-card"><div class="num">${total}</div><div class="lbl">Total bills logged</div></div>
+      <div class="surface stat-card pending"><div class="num">${pending}</div><div class="lbl">With a department</div></div>
+      <div class="surface stat-card rejected"><div class="num">${overdue}</div><div class="lbl">Overdue (past ${APPROVAL_SLA_DAYS} days)</div></div>
+      <div class="surface stat-card hold"><div class="num">${held}</div><div class="lbl">Returned to branch</div></div>
+      <div class="surface stat-card hold"><div class="num">${paymentPending}</div><div class="lbl">Approved — payment pending</div></div>
+      <div class="surface stat-card approved"><div class="num">${paid}</div><div class="lbl">Paid</div></div>
+      <div class="surface stat-card rejected"><div class="num">${rejected}</div><div class="lbl">Rejected</div></div>
+    </div>
+    ${loadSection}
+    <h3 class="section-h">Recent movement</h3>
+    <div class="surface feed">${feedHtml}</div>
+  `;
+}
+
+/* ---------------- new bill ---------------- */
+function renderNewBill(){
+  if(!canEnterBills()){
+    const msg = session.type==='admin'
+      ? "Admin accounts don't submit bills. Log in as a branch, Finance or Marketing to add one."
+      : "Only branches, Finance Department and Marketing Department raise new bills into the register.";
+    return `
+      <h2 class="panel-title">New Bill Entry</h2>
+      <p class="panel-sub">${msg}</p>
+      <div class="surface role-block">
+        <b style="font-family:'Roboto Slab',serif;font-size:16px;display:block;margin-bottom:6px;">Nothing to enter here</b>
+        Signed in as ${escapeHtml(session.name)} (${roleLabel(session.type)}).
+      </div>
+    `;
+  }
+  const availableDepts = DEPARTMENTS.filter(d=> !(session.type==='department' && d.id===session.id));
+
+  return `
+    <h2 class="panel-title">New Bill Entry — ${session.name}</h2>
+    <p class="panel-sub">Fill in the bill details below and choose which department it should go to. It's sent straight there — no intermediate stop.</p>
+    <div id="flashNotice" class="notice"></div>
+    <form id="billForm" class="surface form-grid">
+      <div class="field">
+        <label>Bill / Invoice No.</label>
+        <input type="text" name="billNo" required placeholder="e.g. INV-2201">
+      </div>
+      <div class="field">
+        <label>Bill Date</label>
+        <input type="date" name="billDate" required>
+      </div>
+      <div class="field">
+        <label>Party Name</label>
+        <input type="text" name="vendor" required placeholder="e.g. Sree Traders">
+      </div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" name="amount" min="0.01" step="0.01" required placeholder="0.00">
+      </div>
+      <div class="field">
+        <label>Send to Department</label>
+        <select name="department" required>
+          <option value="" disabled selected>Select department</option>
+          ${availableDepts.map(d=>`<option value="${d.id}">${d.name}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field full">
+        <label>Entered By</label>
+        <input type="text" value="${session.name} (${roleLabel(session.type)})" disabled>
+      </div>
+      <div class="field full">
+        <label>Purpose / Description</label>
+        <textarea name="description" required placeholder="What is this bill for?"></textarea>
+      </div>
+      <div class="field full">
+        <label>Remarks <span class="hint">— optional note for whoever receives it</span></label>
+        <textarea name="remarks" placeholder="Any context the receiving department should know"></textarea>
+      </div>
+      <div class="form-actions">
+        <span class="form-note">Bill will be logged and sent straight to the department you choose above.</span>
+        <button type="submit" class="primary">Submit bill</button>
+      </div>
+    </form>
+
+    <div class="surface" style="margin-top:22px; padding:24px;">
+      <h3 class="section-h">Bulk import from Excel</h3>
+      <p class="form-note" style="margin-bottom:16px; max-width:560px;">Have several bills to log at once? Download the template, fill it in — one row per bill, including which department each should go to — and upload it here. Each valid row is submitted just like a manual entry.</p>
+      <div class="btn-row" style="margin-bottom:6px; align-items:center;">
+        <button type="button" class="ghost small" id="btnDownloadTemplate">Download template (.xlsx)</button>
+        <label class="ghost small" style="cursor:pointer; margin:0;">
+          Choose file
+          <input type="file" id="excelFileInput" accept=".xlsx,.xls" style="display:none;">
+        </label>
+        ${importFileName ? `<span class="form-note">${escapeHtml(importFileName)}</span>` : ''}
+      </div>
+      ${renderImportPreview()}
+    </div>
+  `;
+}
+
+function renderImportPreview(){
+  if(!importRows.length) return '';
+  const validCount = importRows.filter(r=>r.valid).length;
+  const rowsHtml = importRows.map((r,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td>${escapeHtml(r.parsed.billNo || '—')}</td>
+      <td>${escapeHtml(r.parsed.vendor || '—')}</td>
+      <td>${isNaN(r.parsed.amount) ? '—' : fmtMoney(r.parsed.amount)}</td>
+      <td>${r.parsed.billDate || '—'}</td>
+      <td>${escapeHtml(r.parsed.departmentName || '—')}</td>
+      <td>${r.valid ? '<span class="pill approved">Valid</span>' : '<span class="pill rejected">Error</span>'}</td>
+    </tr>
+    ${!r.valid ? `<tr><td></td><td colspan="6" style="color:var(--rejected); font-size:12px; padding:0 18px 11px 18px;">${escapeHtml(r.errors.join('; '))}</td></tr>` : ''}
+  `).join('');
+
+  return `
+    <div style="overflow-x:auto; margin-top:14px; border:1px solid var(--rule); border-radius:6px;">
+      <table class="user-table">
+        <thead><tr><th>Row</th><th>Bill No</th><th>Party</th><th>Amount</th><th>Date</th><th>Department</th><th>Status</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div class="btn-row" style="margin-top:16px;">
+      <button type="button" class="primary small" id="btnConfirmImport" ${validCount===0?'disabled':''}>Import ${validCount} valid bill${validCount===1?'':'s'}</button>
+      <button type="button" class="ghost small" id="btnCancelImport">Clear</button>
+    </div>
+  `;
+}
+
+/* ---------------- bulk mark bar ---------------- */
+function bulkMarkBar(eligibleIds){
+  if(session.type!=='department' || !eligibleIds.length) return '';
+  const otherDepts = DEPARTMENTS.filter(d=>d.id!==session.id);
+  const selectedCount = eligibleIds.filter(id=>selectedBillIds.has(id)).length;
+  const allSelected = selectedCount>0 && selectedCount===eligibleIds.length;
+  return `
+    <div class="surface bulk-bar">
+      <label class="bulk-select-all">
+        <input type="checkbox" id="selectAllBills" ${allSelected?'checked':''}>
+        Select all (${eligibleIds.length})
+      </label>
+      <span class="form-note">${selectedCount} selected</span>
+      <select id="bulkMarkSelect" class="bulk-select">
+        ${otherDepts.map(d=>`<option value="${d.id}">${d.name}</option>`).join('')}
+      </select>
+      <input type="text" id="bulkRemark" placeholder="Remarks (applied to all selected)" class="bulk-remark">
+      <button class="primary small" id="btnBulkMark" ${selectedCount===0?'disabled':''}>Mark ${selectedCount||''} selected on</button>
+    </div>
+  `;
+}
+
+/* ---------------- queue ---------------- */
+function renderQueue(){
+  const mine = bills.filter(isInMyQueue).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const label = session.type==='branch' ? session.name + ' (Branch)' : session.name;
+
+  if(!mine.length){
+    return `
+      <h2 class="panel-title">My Queue — ${label}</h2>
+      <p class="panel-sub">Bills currently waiting on you.</p>
+      <div id="flashNotice" class="notice"></div>
+      <div class="surface empty"><b>Queue is clear</b>No bills are currently waiting on ${escapeHtml(label)}.</div>
+    `;
+  }
+
+  const incoming = mine.filter(isIncomingItem);
+  const inProgress = mine.filter(isProcessorItem);
+  const payment = mine.filter(isPaymentItem);
+  const needsAttention = mine.filter(b => !isIncomingItem(b) && !isProcessorItem(b) && !isPaymentItem(b));
+  const bulkIds = inProgress.map(b=>b.id);
+
+  let sections = '';
+  if(incoming.length){
+    sections += `
+      <h3 class="section-h" style="margin-top:4px;">Incoming — needs acknowledgment (${incoming.length})</h3>
+      <div class="surface" style="margin-bottom:24px;">${incoming.map(b=>renderBillCard(b, true, false)).join('')}</div>
+    `;
+  }
+  if(payment.length){
+    sections += `
+      <h3 class="section-h">Approved — ready for payment (${payment.length})</h3>
+      <div class="surface" style="margin-bottom:24px;">${payment.map(b=>renderBillCard(b, true, false)).join('')}</div>
+    `;
+  }
+  if(needsAttention.length){
+    sections += `
+      <h3 class="section-h">Needs your attention (${needsAttention.length})</h3>
+      <div class="surface" style="margin-bottom:24px;">${needsAttention.map(b=>renderBillCard(b, true, false)).join('')}</div>
+    `;
+  }
+  if(inProgress.length){
+    sections += `
+      <h3 class="section-h">In progress (${inProgress.length})</h3>
+      ${bulkMarkBar(bulkIds)}
+      <div class="surface">${inProgress.map(b=>renderBillCard(b, true, bulkIds.includes(b.id))).join('')}</div>
+    `;
+  }
+
+  return `
+    <h2 class="panel-title">My Queue — ${label}</h2>
+    <p class="panel-sub">Newly marked bills need acknowledgment first, so nothing sits unseen. Once acknowledged, verify, add remarks, and mark them on — tick a few and mark them on together.</p>
+    <div id="flashNotice" class="notice"></div>
+    ${sections}
+  `;
+}
+
+/* ---------------- departments overview ---------------- */
+function renderDepartments(){
+  const scoped = visibleBills();
+  const subtabs = DEPARTMENTS.map(d=>{
+    const n = scoped.filter(b=>b.status==='with_department' && b.currentHolder===d.id).length;
+    return `<button class="tab dept-subtab ${deptTab===d.id?'active':''}" data-dept="${d.id}">${d.name} <span class="count">${n}</span></button>`;
+  }).join('');
+
+  const activeDept = deptById(deptTab);
+  const list = scoped
+    .filter(b=>b.status==='with_department' && b.currentHolder===deptTab)
+    .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const isOwnDept = session.type==='department' && deptTab===session.id;
+  const bulkIds = isOwnDept ? list.map(b=>b.id) : [];
+
+  const body = list.length
+    ? `${bulkMarkBar(bulkIds)}<div class="surface">${list.map(b=>renderBillCard(b, isInMyQueue(b), bulkIds.includes(b.id))).join('')}</div>`
+    : `<div class="surface empty"><b>Nothing pending here</b>No bills are currently with ${escapeHtml(activeDept.name)}${session.type==='branch' ? ' from ' + escapeHtml(session.name) : ''}.</div>`;
+
+  const introText = session.type==='branch'
+    ? `Where ${escapeHtml(session.name)}'s bills currently stand, department by department.`
+    : `What every department currently has pending, across all branches.`;
+
+  return `
+    <h2 class="panel-title">Departments</h2>
+    <p class="panel-sub">${introText}</p>
+    <nav class="tabs subtabs">${subtabs}</nav>
+    ${body}
+  `;
+}
+
+/* ---------------- track ---------------- */
+/* ---------------- my logged bills (department/admin) ---------------- */
+function renderMyLoggedBills(){
+  const mine = bills.filter(isMyBill).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const body = mine.length
+    ? `<div class="surface">${mine.map(b=>renderBillCard(b, isInMyQueue(b))).join('')}</div>`
+    : `<div class="surface empty"><b>Nothing logged yet</b>Bills you personally submit will appear here, with an edit option while they're still moving.</div>`;
+  return `
+    <h2 class="panel-title">My Logged Bills — ${session.name}</h2>
+    <p class="panel-sub">Every bill you've personally submitted, and where it currently stands. Rejected or returned bills can be edited and resubmitted right here.</p>
+    ${body}
+  `;
+}
+
+function renderTrack(){
+  const q = trackFilters.q.trim().toLowerCase();
+  let list = visibleBills();
+  if(q) list = list.filter(b=> b.billNo.toLowerCase().includes(q) || b.vendor.toLowerCase().includes(q) || b.branch.toLowerCase().includes(q));
+  if(trackFilters.status!=='all') list = list.filter(b=>b.status===trackFilters.status);
+  if(session.type!=='branch' && trackFilters.dept!=='all') list = list.filter(b=> b.status==='with_department' && b.currentHolder===trackFilters.dept);
+  list.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+
+  const deptFilterHtml = session.type!=='branch' ? `
+      <select id="trackDept">
+        <option value="all">Currently with any department</option>
+        ${DEPARTMENTS.map(d=>`<option value="${d.id}" ${trackFilters.dept===d.id?'selected':''}>${d.name}</option>`).join('')}
+      </select>` : '';
+
+  const body = list.length
+    ? `<div class="surface">${list.map(b=>renderBillCard(b, isInMyQueue(b))).join('')}</div>`
+    : `<div class="surface empty"><b>No bills match this view</b>Try clearing a filter${session.type==='branch' ? ', or log your first bill from the New Bill Entry tab.' : ', or check back once branches log bills.'}</div>`;
+
+  return `
+    <h2 class="panel-title">${session.type==='branch' ? 'My Bills — ' + session.name : 'Track All Bills'}</h2>
+    <p class="panel-sub">${session.type==='branch' ? 'Every bill ' + escapeHtml(session.name) + ' has logged, and where it stands right now.' : 'Every bill in the register and its full movement trail, department to department.'}</p>
+    <div class="filters">
+      <input type="text" id="trackSearch" placeholder="Search bill no. or party…" value="${escapeHtml(trackFilters.q)}">
+      <select id="trackStatus">
+        <option value="all" ${trackFilters.status==='all'?'selected':''}>All statuses</option>
+        <option value="with_department" ${trackFilters.status==='with_department'?'selected':''}>With a department</option>
+        <option value="returned_to_branch" ${trackFilters.status==='returned_to_branch'?'selected':''}>Returned to branch</option>
+        <option value="approved" ${trackFilters.status==='approved'?'selected':''}>Approved — payment pending</option>
+        <option value="paid" ${trackFilters.status==='paid'?'selected':''}>Paid</option>
+        <option value="rejected" ${trackFilters.status==='rejected'?'selected':''}>Rejected</option>
+      </select>
+      ${deptFilterHtml}
+    </div>
+    ${body}
+  `;
+}
+
+/* ---------------- manage logins (admin) ---------------- */
+function renderUsers(){
+  const rows = Object.keys(users).map(key=>{
+    const u = users[key];
+    return `
+      <tr>
+        <td>${escapeHtml(u.name)}</td>
+        <td><span class="role-tag">${roleLabel(u.type)}</span></td>
+        <td>${u.password===DEFAULT_PASSWORD ? '<span style="color:var(--hold);font-weight:600;">Default (0000)</span>' : '<span style="color:var(--approved);font-weight:600;">Changed</span>'}</td>
+        <td><button class="ghost small btnResetPw" data-user="${key}" ${key===session.id?'disabled title="Use Change password for your own login"':''}>Reset to 0000</button></td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <h2 class="panel-title">Manage Logins</h2>
+    <p class="panel-sub">Every showroom and department login, and whether it's still on the default password. Reset any login back to <b>0000</b> if someone's locked out.</p>
+    <div id="flashNotice" class="notice"></div>
+    <div class="surface">
+      <table class="user-table">
+        <thead><tr><th>Login</th><th>Role</th><th>Password status</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+/* ---------------- bill card ---------------- */
+function renderPaymentBox(bill){
+  const canSendToBranch = session.type==='department' && session.id==='finance' && bill.originType==='branch';
+  return `
+    <div class="action-box payment-box">
+      <h4 class="section-h">Approved — record payment</h4>
+      <p class="form-note" style="margin:0 0 10px 0;">Management has approved this bill. Record how and when it was paid${canSendToBranch ? ', or send it to the branch to pay locally.' : '.'}</p>
+      <form class="paymentForm" data-bill="${bill.id}">
+        <div class="action-row">
+          <div class="field">
+            <label>Payment Type</label>
+            <select name="paymentType" required>
+              <option value="" disabled selected>Select type</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Bank Account</label>
+            <input type="text" name="bankAccount" required placeholder="Account name / number">
+          </div>
+          <div class="field">
+            <label>Date of Payment</label>
+            <input type="date" name="paidOn" required>
+          </div>
+          <div class="field" style="flex:1;">
+            <label>Reference / Cheque No. <span class="hint">— optional</span></label>
+            <input type="text" name="reference" placeholder="Optional">
+          </div>
+        </div>
+        <div class="btn-row" style="margin-top:12px;">
+          <button type="submit" class="primary small">Record payment</button>
+          ${canSendToBranch ? `<button type="button" class="ghost small btnSendBranchPay" data-bill="${bill.id}">Send to branch for payment</button>` : ''}
+        </div>
+      </form>
+    </div>
+  `;
+}
+
+function renderBillCard(bill, actionable, selectable){
+  const st = statusInfo(bill);
+  const due = dueInfo(bill);
+  const open = expandedId===bill.id;
+  const editing = editingBillId===bill.id;
+
+  const trailHtml = bill.history.map(h=>`
+    <div class="trail-node">
+      <div class="stamp ${actionClass(h.action)}">${escapeHtml(stampCode(h))}</div>
+      <div class="trail-label">${actionLabel(h)}</div>
+      <div class="trail-date">${fmtDate(h.at)}</div>
+      ${h.remarks ? `<div class="trail-remark">"${escapeHtml(h.remarks)}"</div>` : ''}
+    </div>
+  `).join('');
+
+  let actionHtml = '';
+  if(actionable){
+    const originReturnedToMe = session.type==='department' && (bill.status==='returned_to_branch' || bill.status==='rejected')
+      && bill.originType==='department' && bill.originId===session.id;
+    const needsAcknowledgment = isIncomingItem(bill);
+    const isPayment = isPaymentItem(bill);
+
+    if(needsAcknowledgment){
+      actionHtml = `
+        <div class="action-box ack-box">
+          <h4 class="section-h">New — needs acknowledgment</h4>
+          <p class="form-note" style="margin:0 0 10px 0;">This bill was just marked to ${escapeHtml(session.name)}. Acknowledge receipt before verifying and marking it on, so it's never left sitting unseen.</p>
+          <div class="action-row">
+            <div class="field" style="flex:1;">
+              <label>Remarks (optional)</label>
+              <input type="text" class="remarkInput" data-bill="${bill.id}" placeholder="Receipt note, if any">
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="primary small btnAcknowledge" data-bill="${bill.id}">Acknowledge receipt</button>
+          </div>
+        </div>
+      `;
+    }else if(isPayment){
+      actionHtml = renderPaymentBox(bill);
+    }else if(session.type==='department' && !originReturnedToMe){
+      const isGM = session.id==='gm';
+      const otherDepts = isGM ? DEPARTMENTS.filter(d=>d.id==='finance') : DEPARTMENTS.filter(d=>d.id!==session.id);
+      const isManagement = session.id==='management';
+      actionHtml = `
+        <div class="action-box">
+          <h4 class="section-h">Action — as ${escapeHtml(session.name)}</h4>
+          ${isGM ? `<p class="form-note" style="margin:0 0 10px 0;">GM sign-off routes straight to Finance, who takes it to Management for final approval.</p>` : ''}
+          <div class="action-row">
+            <div class="field">
+              <label>Mark to department</label>
+              <select class="markToSelect" data-bill="${bill.id}" ${isGM ? 'disabled':''}>
+                ${otherDepts.map(d=>`<option value="${d.id}">${d.name}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field" style="flex:1;">
+              <label>Remarks</label>
+              <input type="text" class="remarkInput" data-bill="${bill.id}" placeholder="Verification note, reason, instructions…">
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="primary small btnMark" data-bill="${bill.id}">${isGM ? 'Send to Finance' : 'Mark on'}</button>
+            <button class="ghost small btnReturn" data-bill="${bill.id}">Return to submitter</button>
+            ${isManagement ? `<button class="ghost small btnApprove" data-bill="${bill.id}" style="border-color:var(--approved); color:var(--approved);">Approve (final)</button>
+            <button class="ghost small btnReject" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Reject</button>` : ''}
+          </div>
+        </div>
+      `;
+    }else if(session.type==='branch' || originReturnedToMe){
+      const backToDept = deptById(bill.returnedFromDept);
+      const backToName = backToDept ? backToDept.name : 'the department';
+      const wasRejected = bill.status==='rejected';
+      actionHtml = `
+        <div class="action-box">
+          <h4 class="section-h">Action — as ${escapeHtml(session.name)}${session.type==='branch' ? ' (Branch)' : ''}</h4>
+          ${wasRejected ? `<p class="form-note" style="margin:0 0 10px 0; color:var(--rejected);">This bill was rejected by ${escapeHtml(backToName)}. Fix it and resubmit, or edit the bill details below first.</p>` : ''}
+          <div class="action-row">
+            <div class="field" style="flex:1;">
+              <label>Note back to ${escapeHtml(backToName)}</label>
+              <input type="text" class="remarkInput" data-bill="${bill.id}" placeholder="What was corrected?">
+            </div>
+          </div>
+          <div class="btn-row" style="margin-top:12px;">
+            <button class="primary small btnResubmit" data-bill="${bill.id}">Resubmit to ${escapeHtml(backToName)}</button>
+            <button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button>
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  const canEdit = !editing && isMyBill(bill) && bill.status!=='approved' && bill.status!=='paid';
+  const editBtnHtml = canEdit && !actionable
+    ? `<div class="btn-row" style="margin-top:14px;"><button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button></div>`
+    : '';
+
+  const paymentInfoHtml = bill.payment ? `
+    <div class="bill-desc" style="border-left:3px solid var(--approved);">
+      <b style="color:var(--approved);">Payment recorded</b><br>
+      ${escapeHtml(bill.payment.type)} from ${escapeHtml(bill.payment.bankAccount)} on ${fmtDate(bill.payment.paidOn)}
+      ${bill.payment.reference ? ` · Ref: ${escapeHtml(bill.payment.reference)}` : ''}
+      <br><span style="color:var(--ink-soft); font-size:12px;">Recorded by ${escapeHtml(bill.payment.recordedBy)}</span>
+    </div>
+  ` : '';
+
+  const bodyHtml = editing ? renderEditForm(bill) : `
+    <div class="bill-desc">${escapeHtml(bill.description)}</div>
+    ${paymentInfoHtml}
+    <h4 class="section-h">Movement trail</h4>
+    <div class="trail">${trailHtml}</div>
+    ${actionHtml}
+    ${editBtnHtml}
+  `;
+
+  return `
+    <div class="bill-card">
+      <div class="bill-top" data-toggle="${bill.id}">
+        <div style="display:flex; align-items:flex-start; gap:12px;">
+          ${selectable ? `<label class="bill-check" onclick="event.stopPropagation()">
+            <input type="checkbox" class="billSelect" data-bill="${bill.id}" ${selectedBillIds.has(bill.id)?'checked':''}>
+          </label>` : ''}
+          <div>
+            <div class="bill-id">${bill.id} · ${escapeHtml(bill.billNo)}</div>
+            <div class="bill-title">${escapeHtml(bill.vendor)}</div>
+            <div class="bill-meta">${escapeHtml(bill.branch)} &nbsp;·&nbsp; Bill dated ${fmtDate(bill.billDate)} &nbsp;·&nbsp; Logged ${fmtDate(bill.createdAt)}</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div class="bill-amount">${fmtMoney(bill.amount)}</div>
+          <div style="margin-top:6px;"><span class="pill ${st.cls}">${escapeHtml(st.label)}</span></div>
+          ${due ? `<div style="margin-top:6px;"><span class="pill due-${due.cls}">${escapeHtml(due.label)}</span></div>` : ''}
+        </div>
+      </div>
+      <div class="bill-detail ${open?'open':''}" id="detail-${bill.id}">
+        ${bodyHtml}
+      </div>
+    </div>
+  `;
+}
+
+function renderEditForm(bill){
+  return `
+    <form class="editForm" data-bill="${bill.id}" style="display:grid; grid-template-columns:1fr 1fr; gap:14px 16px;">
+      <div class="field">
+        <label>Bill / Invoice No.</label>
+        <input type="text" name="billNo" value="${escapeHtml(bill.billNo)}" required>
+      </div>
+      <div class="field">
+        <label>Bill Date</label>
+        <input type="date" name="billDate" value="${escapeHtml(bill.billDate)}" required>
+      </div>
+      <div class="field">
+        <label>Party Name</label>
+        <input type="text" name="vendor" value="${escapeHtml(bill.vendor)}" required>
+      </div>
+      <div class="field">
+        <label>Amount (₹)</label>
+        <input type="number" name="amount" min="0.01" step="0.01" value="${bill.amount}" required>
+      </div>
+      <div class="field full">
+        <label>Purpose / Description</label>
+        <textarea name="description" required>${escapeHtml(bill.description)}</textarea>
+      </div>
+      <div class="field full" style="grid-column:1/-1;">
+        <div class="btn-row">
+          <button type="submit" class="primary small">Save changes</button>
+          <button type="button" class="ghost small btnCancelEdit" data-bill="${bill.id}">Cancel</button>
+        </div>
+      </div>
+    </form>
+  `;
+}
+
+/* ---------------- event wiring ---------------- */
+function attachHandlers(){
+  document.querySelectorAll('[data-toggle]').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const id = el.dataset.toggle;
+      expandedId = expandedId===id ? null : id;
+      render();
+    });
+  });
+
+  document.querySelectorAll('.billSelect').forEach(cb=>{
+    cb.addEventListener('change', ()=>{
+      const id = cb.dataset.bill;
+      if(cb.checked) selectedBillIds.add(id); else selectedBillIds.delete(id);
+      render();
+    });
+  });
+  const selectAllEl = document.getElementById('selectAllBills');
+  if(selectAllEl){
+    selectAllEl.addEventListener('change', ()=>{
+      const ids = myProcessorBillIds();
+      if(selectAllEl.checked) ids.forEach(id=>selectedBillIds.add(id));
+      else ids.forEach(id=>selectedBillIds.delete(id));
+      render();
+    });
+  }
+  const bulkMarkBtn = document.getElementById('btnBulkMark');
+  if(bulkMarkBtn){
+    bulkMarkBtn.addEventListener('click', async ()=>{
+      const deptSel = document.getElementById('bulkMarkSelect');
+      const remarkEl = document.getElementById('bulkRemark');
+      const ids = myProcessorBillIds().filter(id=>selectedBillIds.has(id));
+      if(!ids.length) return;
+      ids.forEach(id=> markForward(id, deptSel.value, remarkEl.value));
+      selectedBillIds.clear();
+      await persistAndRender(`Marked ${ids.length} bill${ids.length===1?'':'s'} on to ` + deptById(deptSel.value).name + '.');
+    });
+  }
+
+  const form = document.getElementById('billForm');
+  if(form){
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(form);
+      const data = Object.fromEntries(fd.entries());
+      if(!data.billNo || !data.vendor || !data.amount || !data.billDate || !data.description || !data.department){
+        flashNotice('Please fill in all required fields, including the department to send it to.', true);
+        return;
+      }
+      submitBill(data);
+      form.reset();
+      await persistAndRender('Bill ' + data.billNo + ' logged and sent to ' + deptById(data.department).name + '.');
+    });
+  }
+
+  document.querySelectorAll('.btnAcknowledge').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const billId = btn.dataset.bill;
+      const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
+      acknowledgeBill(billId, remarkEl ? remarkEl.value : '');
+      await persistAndRender('Receipt acknowledged.');
+    });
+  });
+  document.querySelectorAll('.paymentForm').forEach(form=>{
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const billId = form.dataset.bill;
+      const fd = new FormData(form);
+      const data = Object.fromEntries(fd.entries());
+      if(!data.paymentType || !data.bankAccount || !data.paidOn){
+        flashNotice('Please fill in payment type, bank account and date of payment.', true);
+        return;
+      }
+      recordPayment(billId, data);
+      await persistAndRender('Payment recorded for bill.');
+    });
+  });
+  document.querySelectorAll('.btnSendBranchPay').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const billId = btn.dataset.bill;
+      sendToBranchForPayment(billId, 'Sent to branch for local payment');
+      await persistAndRender('Sent to the branch for payment.');
+    });
+  });
+
+  document.querySelectorAll('.btnMark').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const billId = btn.dataset.bill;
+      const sel = document.querySelector(`.markToSelect[data-bill="${billId}"]`);
+      const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
+      markForward(billId, sel.value, remarkEl.value);
+      await persistAndRender('Marked on to ' + deptById(sel.value).name + '.');
+    });
+  });
+  document.querySelectorAll('.btnReturn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const billId = btn.dataset.bill;
+      const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
+      if(!remarkEl.value.trim()){ flashNotice('Add a remark explaining what needs correction.', true); return; }
+      returnToOrigin(billId, remarkEl.value);
+      await persistAndRender('Returned to the submitter for correction.');
+    });
+  });
+  document.querySelectorAll('.btnApprove').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const billId = btn.dataset.bill;
+      const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
+      approveBill(billId, remarkEl.value);
+      await persistAndRender('Bill approved.');
+    });
+  });
+  document.querySelectorAll('.btnReject').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const billId = btn.dataset.bill;
+      const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
+      if(!remarkEl.value.trim()){ flashNotice('Add a remark explaining the rejection.', true); return; }
+      rejectBill(billId, remarkEl.value);
+      await persistAndRender('Bill rejected.');
+    });
+  });
+  document.querySelectorAll('.btnResubmit').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const billId = btn.dataset.bill;
+      const bill = bills.find(b=>b.id===billId);
+      const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
+      const deptName = deptById(bill.returnedFromDept)?.name || 'the department';
+      if(bill.status==='rejected') resubmitRejected(billId, remarkEl.value);
+      else resubmit(billId, remarkEl.value);
+      await persistAndRender('Resubmitted to ' + deptName + '.');
+    });
+  });
+
+  document.querySelectorAll('.btnEdit').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      editingBillId = btn.dataset.bill;
+      render();
+    });
+  });
+  document.querySelectorAll('.btnCancelEdit').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      editingBillId = null;
+      render();
+    });
+  });
+  document.querySelectorAll('.editForm').forEach(form=>{
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const billId = form.dataset.bill;
+      const fd = new FormData(form);
+      const data = Object.fromEntries(fd.entries());
+      if(!data.billNo || !data.vendor || !data.amount || !data.billDate || !data.description){
+        flashNotice('Please fill in all fields before saving.', true);
+        return;
+      }
+      editBill(billId, data);
+      editingBillId = null;
+      await persistAndRender('Bill details updated.');
+    });
+  });
+
+  document.querySelectorAll('.btnResetPw').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const key = btn.dataset.user;
+      users[key].password = DEFAULT_PASSWORD;
+      await saveUsers();
+      render();
+      flashNotice(users[key].name + ' reset to the default password (0000).');
+    });
+  });
+
+  document.querySelectorAll('.dept-subtab').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      deptTab = btn.dataset.dept;
+      expandedId = null;
+      selectedBillIds.clear();
+      render();
+    });
+  });
+
+  const dlBtn = document.getElementById('btnDownloadTemplate');
+  if(dlBtn) dlBtn.addEventListener('click', downloadTemplate);
+
+  const fileInput = document.getElementById('excelFileInput');
+  if(fileInput) fileInput.addEventListener('change', (e)=>{
+    const f = e.target.files[0];
+    if(f) handleExcelFile(f);
+  });
+
+  const confirmImportBtn = document.getElementById('btnConfirmImport');
+  if(confirmImportBtn) confirmImportBtn.addEventListener('click', confirmImport);
+
+  const cancelImportBtn = document.getElementById('btnCancelImport');
+  if(cancelImportBtn) cancelImportBtn.addEventListener('click', clearImport);
+
+  const searchEl = document.getElementById('trackSearch');
+  if(searchEl){
+    searchEl.addEventListener('input', ()=>{
+      const pos = searchEl.selectionStart;
+      trackFilters.q = searchEl.value;
+      render();
+      const el2 = document.getElementById('trackSearch');
+      if(el2){ el2.focus(); el2.setSelectionRange(pos,pos); }
+    });
+  }
+  const statusEl = document.getElementById('trackStatus');
+  if(statusEl) statusEl.addEventListener('change', ()=>{ trackFilters.status = statusEl.value; render(); });
+  const deptEl = document.getElementById('trackDept');
+  if(deptEl) deptEl.addEventListener('change', ()=>{ trackFilters.dept = deptEl.value; render(); });
+}
+
+/* ---------------- init ---------------- */
+async function init(){
+  renderLogin();
+  await loadAll();
+}
+init();
+</script>
+</body>
+</html>
