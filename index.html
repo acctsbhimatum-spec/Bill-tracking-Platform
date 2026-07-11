@@ -3,45 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bill Dāk — Movement Register</title>
+<title>Bill Movement & Approval Register</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Special+Elite&family=Roboto+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 :root{
-  --ink:#23281F;
-  --ink-soft:#565C4B;
-  --paper:#E9EEE1;
-  --paper-raised:#F5F7EC;
-  --paper-deep:#DDE3D0;
-  --rule:#C3C9B3;
-  --rule-strong:#A9B096;
-  --margin-red:#B5453A;
-  --accent:#4B3F7D;
-  --accent-soft:#EDE9F7;
-  --pending:#3D5A73;
-  --pending-soft:#DEE8EE;
-  --approved:#3F6B4A;
-  --approved-soft:#DFEBE1;
-  --hold:#A9781F;
-  --hold-soft:#F1E7CE;
-  --rejected:#A23E2E;
-  --rejected-soft:#F3E0DA;
+  --ink:#E7EAF0;
+  --ink-soft:#8A94A6;
+  --paper:#0B0E14;
+  --paper-raised:#131722;
+  --paper-deep:#1B202C;
+  --rule:#212636;
+  --rule-strong:#323A4E;
+  --accent:#5B7FFF;
+  --accent-strong:#3450D6;
+  --accent-soft:#161D33;
+  --pending:#4FB3D9;
+  --pending-soft:#11212B;
+  --approved:#34D399;
+  --hold:#FBBF24;
+  --hold-soft:#2B2310;
+  --approved-soft:#0F2B22;
+  --rejected:#F87171;
+  --rejected-soft:#2C1717;
   --white:#FFFFFF;
-  --shadow: 0 1px 2px rgba(35,40,31,0.06), 0 4px 14px rgba(35,40,31,0.06);
+  --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 28px rgba(0,0,0,0.35);
 }
 
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
   background-color:var(--paper);
-  background-image: repeating-linear-gradient(
-      to bottom,
-      transparent,
-      transparent 27px,
-      rgba(169,176,150,0.35) 28px
-    );
+  background-image: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(91,127,255,0.08), transparent 70%);
+  background-repeat:no-repeat;
   color:var(--ink);
-  font-family:'IBM Plex Sans', sans-serif;
+  font-family:'Inter', sans-serif;
   min-height:100vh;
   -webkit-font-smoothing:antialiased;
 }
@@ -50,48 +46,42 @@ body{
   position:relative;
   max-width:1180px;
   margin:0 auto;
-  padding:0 28px 80px 56px;
+  padding:0 28px 80px 28px;
 }
 
-.margin-rule{
-  position:absolute;
-  top:0;
-  bottom:0;
-  left:34px;
-  width:2px;
-  background:var(--margin-red);
-  opacity:0.55;
-}
 @media (max-width:680px){
-  .margin-rule{display:none;}
   .app{padding:0 16px 60px 16px;}
 }
 
 /* ---------- Topbar ---------- */
 .topbar{
   display:flex;
-  align-items:flex-end;
+  align-items:center;
   justify-content:space-between;
   flex-wrap:wrap;
   gap:18px;
-  padding:36px 0 20px 0;
-  border-bottom:2px solid var(--rule-strong);
+  padding:22px 0;
+  border-bottom:1px solid var(--rule);
+  margin-bottom:4px;
 }
-.brand{display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
-.brand-mark{
-  font-family:'Special Elite', monospace;
-  font-size:34px;
-  letter-spacing:2px;
-  color:var(--accent);
+.brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.brand-icon{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:34px;
+  height:34px;
+  border-radius:9px;
+  background:linear-gradient(135deg, var(--accent), var(--accent-strong));
+  flex-shrink:0;
 }
+.login-brand-icon{width:44px; height:44px; border-radius:12px; margin:0 auto 14px auto;}
 .brand-sub{
-  font-family:'Roboto Slab', serif;
-  font-size:14px;
-  font-weight:500;
-  color:var(--ink-soft);
-  letter-spacing:0.3px;
-  border-left:2px solid var(--rule-strong);
-  padding-left:14px;
+  font-family:'Inter', sans-serif;
+  font-size:16px;
+  font-weight:700;
+  color:var(--ink);
+  letter-spacing:-0.01em;
 }
 .identity{
   display:flex;
@@ -117,12 +107,12 @@ label{
   font-weight:600;
 }
 select, input, textarea{
-  font-family:'IBM Plex Sans', sans-serif;
+  font-family:'Inter', sans-serif;
   font-size:14.5px;
   color:var(--ink);
-  background:var(--paper-raised);
+  background:var(--paper-deep);
   border:1.5px solid var(--rule-strong);
-  border-radius:3px;
+  border-radius:7px;
   padding:9px 11px;
 }
 select:focus, input:focus, textarea:focus{
@@ -138,34 +128,37 @@ select:focus, input:focus, textarea:focus{
   flex-wrap:wrap;
 }
 .tab{
-  font-family:'Roboto Slab', serif;
+  font-family:'Inter', sans-serif;
   font-weight:600;
   font-size:13.5px;
-  letter-spacing:0.2px;
+  letter-spacing:0.1px;
   background:transparent;
   border:none;
-  border-bottom:3px solid transparent;
+  border-radius:7px 7px 0 0;
+  border-bottom:2px solid transparent;
   color:var(--ink-soft);
-  padding:12px 18px;
+  padding:10px 16px;
   cursor:pointer;
   display:flex;
   align-items:center;
   gap:8px;
+  transition:background 0.12s ease, color 0.12s ease;
 }
-.tab:hover{color:var(--ink);}
+.tab:hover{color:var(--ink); background:var(--paper-raised);}
 .tab.active{
   color:var(--accent);
   border-bottom-color:var(--accent);
+  background:var(--paper-raised);
 }
 .tab .count{
-  background:var(--rule-strong);
-  color:var(--paper-raised);
-  border-radius:10px;
-  padding:1px 8px;
+  background:var(--paper-deep);
+  color:var(--ink-soft);
+  border-radius:6px;
+  padding:1px 7px;
   font-family:'IBM Plex Mono', monospace;
   font-size:11px;
 }
-.tab.active .count{background:var(--accent);}
+.tab.active .count{background:var(--accent-soft); color:var(--accent);}
 
 .tabs.subtabs{
   margin-top:0;
@@ -177,24 +170,24 @@ select:focus, input:focus, textarea:focus{
 .tabs.subtabs .tab{
   background:var(--paper-raised);
   border:1px solid var(--rule-strong);
-  border-bottom:1px solid var(--rule-strong);
-  border-radius:16px;
+  border-radius:7px;
   padding:7px 14px;
   font-size:12.5px;
 }
 .tabs.subtabs .tab.active{
-  background:var(--accent);
-  border-color:var(--accent);
+  background:var(--accent-strong);
+  border-color:var(--accent-strong);
   color:var(--white);
 }
-.tabs.subtabs .tab.active .count{background:rgba(255,255,255,0.25); color:var(--white);}
+.tabs.subtabs .tab.active .count{background:rgba(255,255,255,0.2); color:var(--white);}
 
 main{padding-top:26px;}
 
 .panel-title{
-  font-family:'Roboto Slab', serif;
-  font-size:22px;
+  font-family:'Inter', sans-serif;
+  font-size:21px;
   font-weight:700;
+  letter-spacing:-0.015em;
   margin:0 0 4px 0;
 }
 .panel-sub{
@@ -209,7 +202,7 @@ main{padding-top:26px;}
 .surface{
   background:var(--paper-raised);
   border:1px solid var(--rule);
-  border-radius:6px;
+  border-radius:10px;
   box-shadow:var(--shadow);
 }
 
@@ -230,15 +223,14 @@ main{padding-top:26px;}
   text-align:center;
   margin-bottom:22px;
 }
-.login-brand .brand-mark{display:block; font-size:38px;}
-.login-brand .brand-sub{border-left:none; padding-left:0; display:block; margin-top:4px;}
+.login-brand .brand-sub{font-size:19px; display:block;}
 .login-field{display:flex; flex-direction:column; gap:6px; margin-bottom:16px;}
 .login-field select, .login-field input{width:100%; padding:11px 12px; font-size:15px;}
 .login-error{
   background:var(--rejected-soft);
   color:var(--rejected);
   border:1px solid var(--rejected);
-  border-radius:4px;
+  border-radius:8px;
   padding:9px 12px;
   font-size:13px;
   font-weight:600;
@@ -305,7 +297,7 @@ button.primary.wide{width:100%; padding:12px; font-size:14.5px;}
 }
 
 .section-h{
-  font-family:'Roboto Slab', serif;
+  font-family:'Inter', sans-serif;
   font-size:15px;
   font-weight:700;
   margin:0 0 12px 0;
@@ -317,7 +309,7 @@ button.primary.wide{width:100%; padding:12px; font-size:14.5px;}
   display:flex;
   gap:12px;
   padding:12px 18px;
-  border-bottom:1px dashed var(--rule);
+  border-bottom:1px solid var(--rule);
   font-size:13.5px;
   align-items:baseline;
 }
@@ -336,7 +328,7 @@ button.primary.wide{width:100%; padding:12px; font-size:14.5px;}
   font-size:14px;
   line-height:1.6;
 }
-.empty b{color:var(--ink); display:block; font-family:'Roboto Slab',serif; font-size:16px; margin-bottom:6px;}
+.empty b{color:var(--ink); display:block; font-family:'Inter',sans-serif; font-size:16px; margin-bottom:6px;}
 
 /* ---------- Form ---------- */
 .form-grid{
@@ -355,7 +347,7 @@ button.primary.wide{width:100%; padding:12px; font-size:14.5px;}
   color:var(--ink-soft);
 }
 .field .hint{font-size:11.5px; color:var(--ink-soft); font-weight:400; text-transform:none; letter-spacing:0;}
-textarea{resize:vertical; min-height:64px; font-family:'IBM Plex Sans',sans-serif;}
+textarea{resize:vertical; min-height:64px; font-family:'Inter',sans-serif;}
 .form-actions{
   grid-column:1/-1;
   display:flex;
@@ -368,33 +360,36 @@ textarea{resize:vertical; min-height:64px; font-family:'IBM Plex Sans',sans-seri
 .form-note{font-size:12.5px; color:var(--ink-soft);}
 
 button.primary{
-  font-family:'Roboto Slab', serif;
+  font-family:'Inter', sans-serif;
   font-weight:600;
   font-size:14px;
-  background:var(--accent);
+  background:var(--accent-strong);
   color:var(--white);
   border:none;
-  border-radius:4px;
-  padding:11px 22px;
+  border-radius:7px;
+  padding:10px 20px;
   cursor:pointer;
+  transition:background 0.12s ease, transform 0.05s ease;
 }
-button.primary:hover{background:#3d3368;}
+button.primary:hover{background:#4360E8;}
+button.primary:active{transform:translateY(1px);}
 button.ghost{
-  font-family:'IBM Plex Sans', sans-serif;
+  font-family:'Inter', sans-serif;
   font-weight:600;
   font-size:13px;
   background:transparent;
   color:var(--ink-soft);
   border:1.5px solid var(--rule-strong);
-  border-radius:4px;
+  border-radius:7px;
   padding:9px 16px;
   cursor:pointer;
+  transition:border-color 0.12s ease, color 0.12s ease;
 }
 button.ghost:hover{border-color:var(--ink-soft); color:var(--ink);}
 button.small{padding:6px 12px; font-size:12.5px;}
 button.link{
   background:none; border:none; cursor:pointer;
-  font-family:'IBM Plex Sans',sans-serif; font-size:12.5px; font-weight:600;
+  font-family:'Inter',sans-serif; font-size:12.5px; font-weight:600;
   color:var(--accent); text-decoration:underline; padding:4px 0;
 }
 
@@ -403,7 +398,7 @@ button.link{
   background:var(--approved-soft);
   color:var(--approved);
   border:1px solid var(--approved);
-  border-radius:4px;
+  border-radius:8px;
   padding:10px 14px;
   font-size:13px;
   font-weight:600;
@@ -496,7 +491,7 @@ button.link{
   text-transform:uppercase;
   letter-spacing:0.5px;
   padding:4px 10px;
-  border-radius:11px;
+  border-radius:6px;
   white-space:nowrap;
 }
 .pill.pending{background:var(--pending-soft); color:var(--pending);}
@@ -510,12 +505,12 @@ button.link{
 .bill-detail{
   margin-top:16px;
   padding-top:16px;
-  border-top:1px dashed var(--rule);
+  border-top:1px solid var(--rule);
   display:none;
 }
 .bill-detail.open{display:block;}
 
-/* stamp trail */
+/* workflow trail */
 .trail{
   display:flex;
   align-items:flex-start;
@@ -527,39 +522,31 @@ button.link{
   display:flex;
   flex-direction:column;
   align-items:center;
-  min-width:104px;
+  min-width:96px;
   position:relative;
 }
 .trail-node:not(:last-child)::after{
   content:'';
   position:absolute;
-  top:26px;
-  left:calc(50% + 30px);
+  top:19px;
+  left:calc(50% + 22px);
   width:calc(100% - 12px);
-  border-top:2px dashed var(--rule-strong);
+  border-top:1.5px solid var(--rule-strong);
 }
 .stamp{
-  width:54px; height:54px;
-  border-radius:50%;
-  border:2.5px solid currentColor;
+  width:38px; height:38px;
+  border-radius:9px;
+  border:1.5px solid currentColor;
+  background:color-mix(in srgb, currentColor 14%, var(--paper-raised));
   display:flex;
   align-items:center;
   justify-content:center;
   font-family:'IBM Plex Mono', monospace;
   font-weight:700;
-  font-size:12px;
-  letter-spacing:0.3px;
+  font-size:11px;
+  letter-spacing:0.2px;
   position:relative;
   z-index:1;
-  background:var(--paper-raised);
-}
-.stamp::before{
-  content:'';
-  position:absolute;
-  inset:5px;
-  border-radius:50%;
-  border:1px dotted currentColor;
-  opacity:0.6;
 }
 .stamp.c-pending{color:var(--pending);}
 .stamp.c-hold{color:var(--hold);}
@@ -585,7 +572,6 @@ button.link{
   font-size:10.5px;
   color:var(--ink-soft);
   margin-top:3px;
-  font-style:italic;
   max-width:104px;
   text-align:center;
   line-height:1.3;
@@ -595,7 +581,7 @@ button.link{
   font-size:13px;
   color:var(--ink-soft);
   background:var(--paper);
-  border-radius:4px;
+  border-radius:8px;
   padding:10px 12px;
   margin-bottom:16px;
   line-height:1.5;
@@ -603,9 +589,9 @@ button.link{
 
 .action-box{
   background:var(--accent-soft);
-  border-radius:5px;
+  border-radius:8px;
   padding:16px;
-  border:1px solid #d8d0ef;
+  border:1px solid #453A72;
 }
 .action-box .section-h{color:var(--accent);}
 .action-box.ack-box{background:var(--hold-soft); border-color:var(--hold);}
@@ -652,7 +638,6 @@ footer{
 
 @media (max-width:680px){
   .form-grid{grid-template-columns:1fr;}
-  .brand-mark{font-size:26px;}
 }
 </style>
 </head>
@@ -1117,7 +1102,12 @@ function renderLogin(){
     <div class="login-wrap">
       <div class="surface login-card">
         <div class="login-brand">
-          <span class="brand-mark">DĀK</span>
+          <span class="brand-icon login-brand-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M9 13.5l2 2 4-4.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
           <span class="brand-sub">Bill Movement &amp; Approval Register</span>
         </div>
         ${loginError ? `<div class="login-error">${escapeHtml(loginError)}</div>` : ''}
@@ -1215,10 +1205,14 @@ function renderApp(){
   const root = document.getElementById('root');
   root.innerHTML = `
     <div class="app">
-      <div class="margin-rule"></div>
       <header class="topbar">
         <div class="brand">
-          <span class="brand-mark">DĀK</span>
+          <span class="brand-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M9 13.5l2 2 4-4.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
           <span class="brand-sub">Bill Movement &amp; Approval Register</span>
         </div>
         <div class="identity">
@@ -1413,7 +1407,7 @@ function renderNewBill(){
       <h2 class="panel-title">New Bill Entry</h2>
       <p class="panel-sub">${msg}</p>
       <div class="surface role-block">
-        <b style="font-family:'Roboto Slab',serif;font-size:16px;display:block;margin-bottom:6px;">Nothing to enter here</b>
+        <b style="font-family:'Inter',sans-serif;font-size:16px;display:block;margin-bottom:6px;">Nothing to enter here</b>
         Signed in as ${escapeHtml(session.name)} (${roleLabel(session.type)}).
       </div>
     `;
