@@ -709,8 +709,8 @@ footer{
 /* ---------------- Supabase ---------------- */
 // Replace these two values with your own project's URL and anon (public) key,
 // found in Supabase → Project Settings → API.
-const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
-const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
+const SUPABASE_URL = 'https://jucorkxvrynptcnenhdd.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp1Y29ya3h2cnlucHRjbmVuaGRkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3NjQyNjIsImV4cCI6MjA5OTM0MDI2Mn0.1Kq9_ALAcjg7lUuUI-qHhIe5qz4xbN1569pjcB7wbCc';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ---------------- constants ---------------- */
@@ -762,6 +762,7 @@ let editingBillId = null;
 let selectedBillIds = new Set();
 let addBranchError = '';
 let addDeptError = '';
+let connectionWarning = '';
 
 /* ---------------- helpers ---------------- */
 function deptById(id){ return DEPARTMENTS.find(d=>d.id===id); }
@@ -832,6 +833,16 @@ async function saveOrgStructure(){
 }
 
 /* ---------------- persistence ---------------- */
+const TIMED_OUT = Symbol('timed-out');
+function withTimeout(promise, ms=7000){
+  return new Promise((resolve)=>{
+    const timer = setTimeout(()=> resolve(TIMED_OUT), ms);
+    promise.then(
+      (v)=>{ clearTimeout(timer); resolve(v); },
+      ()=>{ clearTimeout(timer); resolve(TIMED_OUT); }
+    );
+  });
+}
 async function kvGet(key){
   const { data, error } = await sb.from('app_kv').select('value').eq('key', key).maybeSingle();
   if(error){ console.error('Supabase read error', error); return null; }
@@ -842,42 +853,37 @@ async function kvSet(key, value){
   if(error) console.error('Supabase write error', error);
 }
 async function loadAll(){
-  try{
-    const v = await kvGet(ORG_KEY);
-    if(v && Array.isArray(v.branches) && Array.isArray(v.departments)){
-      BRANCHES = v.branches;
-      DEPARTMENTS = v.departments;
-    }else{
-      BRANCHES = DEFAULT_BRANCHES.slice();
-      DEPARTMENTS = DEFAULT_DEPARTMENTS.map(d=>({...d}));
-      await kvSet(ORG_KEY, {branches:BRANCHES, departments:DEPARTMENTS});
-    }
-  }catch(e){
+  connectionWarning = '';
+
+  let v = await withTimeout(kvGet(ORG_KEY));
+  if(v===TIMED_OUT){ connectionWarning = 'Could not reach the database.'; v = null; }
+  if(v && Array.isArray(v.branches) && Array.isArray(v.departments)){
+    BRANCHES = v.branches;
+    DEPARTMENTS = v.departments;
+  }else{
     BRANCHES = DEFAULT_BRANCHES.slice();
     DEPARTMENTS = DEFAULT_DEPARTMENTS.map(d=>({...d}));
+    if(!connectionWarning) await withTimeout(kvSet(ORG_KEY, {branches:BRANCHES, departments:DEPARTMENTS}));
   }
   if(!deptById(deptTab)) deptTab = DEPARTMENTS[0].id;
 
-  try{
-    const v = await kvGet(BILLS_KEY);
-    bills = v || [];
-  }catch(e){ bills = []; }
+  let vb = await withTimeout(kvGet(BILLS_KEY));
+  if(vb===TIMED_OUT){ connectionWarning = connectionWarning || 'Could not reach the database.'; vb = null; }
+  bills = vb || [];
 
-  try{
-    const v = await kvGet(USERS_KEY);
-    if(v){
-      users = v;
-    }else{
-      users = buildDefaultUsers();
-      await kvSet(USERS_KEY, users);
-    }
-  }catch(e){
+  let vu = await withTimeout(kvGet(USERS_KEY));
+  if(vu===TIMED_OUT){ connectionWarning = connectionWarning || 'Could not reach the database.'; vu = null; }
+  if(vu){
+    users = vu;
+  }else{
     users = buildDefaultUsers();
+    if(!connectionWarning) await withTimeout(kvSet(USERS_KEY, users));
   }
+
   dataLoaded = true;
 }
-async function saveBills(){ try{ await kvSet(BILLS_KEY, bills); }catch(e){ console.error(e); } }
-async function saveUsers(){ try{ await kvSet(USERS_KEY, users); }catch(e){ console.error(e); } }
+async function saveBills(){ try{ await withTimeout(kvSet(BILLS_KEY, bills)); }catch(e){ console.error(e); } }
+async function saveUsers(){ try{ await withTimeout(kvSet(USERS_KEY, users)); }catch(e){ console.error(e); } }
 
 let flashTimer=null;
 function flashNotice(msg, isError){
@@ -1230,6 +1236,7 @@ function renderLogin(){
           </span>
           <span class="brand-sub">Bill Movement &amp; Approval Register</span>
         </div>
+        ${connectionWarning ? `<div class="login-error">${escapeHtml(connectionWarning)} Showing default logins for now — nothing will be saved until this is fixed. Check that SUPABASE_URL / SUPABASE_ANON_KEY in the code are correct, that supabase-schema.sql has been run, and that the Supabase project is active.</div>` : ''}
         ${loginError ? `<div class="login-error">${escapeHtml(loginError)}</div>` : ''}
         <form id="loginForm">
           <div class="login-field">
@@ -1389,7 +1396,7 @@ function renderApp(){
     render();
     btn.disabled = false;
     btn.innerHTML = original;
-    flashNotice('Up to date.');
+    flashNotice(connectionWarning ? connectionWarning + ' Showing the last data available.' : 'Up to date.', !!connectionWarning);
   });
   document.getElementById('tabs').addEventListener('click', (e)=>{
     const btn = e.target.closest('.tab');
