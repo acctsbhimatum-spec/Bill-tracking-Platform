@@ -745,7 +745,7 @@ let dataLoaded = false;
 let session = null; // {id, type:'branch'|'department'|'admin', name}
 let tab = 'dashboard';
 let expandedId = null;
-let trackFilters = {q:'', status:'all', dept:'all'};
+let trackFilters = {q:'', status:'all', dept:'all', branch:'all'};
 let loginError = '';
 let loginType = '';
 let loginSpecific = '';
@@ -1060,7 +1060,7 @@ function markForward(billId, toDeptId, remarks){
 function acknowledgeBill(billId, remarks){
   const bill = bills.find(b=>b.id===billId);
   bill.acknowledged = true;
-  addHistory(bill, 'acknowledged', bill.currentHolder, remarks);
+  addHistory(bill, 'acknowledged', null, remarks);
 }
 function returnToOrigin(billId, remarks){
   const bill = bills.find(b=>b.id===billId);
@@ -1068,6 +1068,7 @@ function returnToOrigin(billId, remarks){
   bill.status = 'returned_to_branch';
   bill.currentHolder = bill.originType==='branch' ? ('branch:'+bill.originId) : ('origin-dept:'+bill.originId);
   bill.dueAt = null;
+  bill.acknowledged = false;
   addHistory(bill, 'returned_to_branch', null, remarks);
 }
 function resubmit(billId, remarks){
@@ -1084,6 +1085,7 @@ function approveBill(billId, remarks){
   bill.status = 'approved';
   bill.currentHolder = 'finance'; // final approval routes straight to Finance for payment
   bill.dueAt = null;
+  bill.acknowledged = false;
   addHistory(bill, 'approved', 'finance', remarks);
 }
 function rejectBill(billId, remarks){
@@ -1091,6 +1093,7 @@ function rejectBill(billId, remarks){
   bill.returnedFromDept = bill.currentHolder;
   bill.status = 'rejected';
   bill.dueAt = null;
+  bill.acknowledged = false;
   addHistory(bill, 'rejected', null, remarks);
 }
 function resubmitRejected(billId, remarks){
@@ -1119,6 +1122,7 @@ function sendToBranchForPayment(billId, remarks){
   const bill = bills.find(b=>b.id===billId);
   bill.paymentAtBranch = true;
   bill.currentHolder = 'branch:'+bill.originId;
+  bill.acknowledged = false;
   addHistory(bill, 'sent_for_branch_payment', null, remarks);
 }
 function editBill(billId, data){
@@ -1159,7 +1163,8 @@ function isProcessorItem(bill){
   return session.type==='department' && bill.status==='with_department' && bill.currentHolder===session.id && bill.acknowledged;
 }
 function isIncomingItem(bill){
-  return session.type==='department' && bill.status==='with_department' && bill.currentHolder===session.id && !bill.acknowledged;
+  if(!isInMyQueue(bill)) return false;
+  return !bill.acknowledged;
 }
 function isPaymentItem(bill){
   if(bill.status!=='approved') return false;
@@ -1196,7 +1201,7 @@ function actionClass(action){
 function actionLabel(h){
   switch(h.action){
     case 'submitted': return 'Submitted to ' + (deptById(h.toDept)?.name || h.toDept);
-    case 'acknowledged': return 'Acknowledged by ' + (deptById(h.toDept)?.name || h.toDept);
+    case 'acknowledged': return 'Receipt acknowledged';
     case 'resubmitted': return 'Resubmitted to ' + (deptById(h.toDept)?.name || h.toDept);
     case 'verified_and_marked': return 'Verified, marked to ' + (deptById(h.toDept)?.name || h.toDept);
     case 'marked_to': return 'Marked to ' + (deptById(h.toDept)?.name || h.toDept);
@@ -1369,6 +1374,7 @@ function renderApp(){
       <nav class="tabs" id="tabs">
         <button class="tab" data-tab="dashboard">Dashboard</button>
         <button class="tab" data-tab="new">New Bill Entry</button>
+        ${session.type!=='admin' ? `<button class="tab" data-tab="pending">Pending to Receive <span class="count" id="pendingCount">0</span></button>` : ''}
         <button class="tab" data-tab="queue">My Queue <span class="count" id="queueCount">0</span></button>
         ${session.type!=='department' ? `<button class="tab" data-tab="departments">Departments</button>` : ''}
         <button class="tab" data-tab="track">${session.type==='branch' ? 'My Bills' : 'Track All Bills'}</button>
@@ -1425,7 +1431,10 @@ function renderApp(){
 function render(){
   if(!session) return;
   document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
-  const queueN = bills.filter(isInMyQueue).length;
+  const pendingN = bills.filter(isIncomingItem).length;
+  const pendingEl = document.getElementById('pendingCount');
+  if(pendingEl) pendingEl.textContent = pendingN;
+  const queueN = bills.filter(b=> isInMyQueue(b) && !isIncomingItem(b)).length;
   const qEl = document.getElementById('queueCount');
   if(qEl) qEl.textContent = queueN;
 
@@ -1440,6 +1449,7 @@ function render(){
   }
   if(tab==='dashboard') content.innerHTML = renderDashboard();
   else if(tab==='new') content.innerHTML = renderNewBill();
+  else if(tab==='pending' && session.type!=='admin') content.innerHTML = renderPendingReceive();
   else if(tab==='queue') content.innerHTML = renderQueue();
   else if(tab==='departments') content.innerHTML = renderDepartments();
   else if(tab==='track') content.innerHTML = renderTrack();
@@ -1679,9 +1689,32 @@ function bulkMarkBar(eligibleIds){
   `;
 }
 
+/* ---------------- pending to receive ---------------- */
+function renderPendingReceive(){
+  const incoming = bills.filter(isIncomingItem).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const subText = 'Bills freshly arriving here — whether newly assigned to you, returned to you for correction, or approved and sent to you for payment — land here first, so nothing sits unseen. Acknowledge receipt and it moves into My Queue.';
+  const emptyText = `Nothing is currently waiting for ${escapeHtml(session.name)} to acknowledge.`;
+
+  if(!incoming.length){
+    return `
+      <h2 class="panel-title">Pending to Receive — ${session.name}</h2>
+      <p class="panel-sub">${subText}</p>
+      <div id="flashNotice" class="notice"></div>
+      <div class="surface empty"><b>Nothing waiting</b>${emptyText}</div>
+    `;
+  }
+
+  return `
+    <h2 class="panel-title">Pending to Receive — ${session.name}</h2>
+    <p class="panel-sub">${subText}</p>
+    <div id="flashNotice" class="notice"></div>
+    <div class="surface">${incoming.map(b=>renderBillCard(b, true, false)).join('')}</div>
+  `;
+}
+
 /* ---------------- queue ---------------- */
 function renderQueue(){
-  const mine = bills.filter(isInMyQueue).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  const mine = bills.filter(b=> isInMyQueue(b) && !isIncomingItem(b)).sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   const label = session.type==='branch' ? session.name + ' (Branch)' : session.name;
 
   if(!mine.length){
@@ -1693,22 +1726,15 @@ function renderQueue(){
     `;
   }
 
-  const incoming = mine.filter(isIncomingItem);
   const inProgress = mine.filter(isProcessorItem);
   const payment = mine.filter(isPaymentItem);
-  const needsAttention = mine.filter(b => !isIncomingItem(b) && !isProcessorItem(b) && !isPaymentItem(b));
+  const needsAttention = mine.filter(b => !isProcessorItem(b) && !isPaymentItem(b));
   const bulkIds = inProgress.map(b=>b.id);
 
   let sections = '';
-  if(incoming.length){
-    sections += `
-      <h3 class="section-h" style="margin-top:4px;">Incoming — needs acknowledgment (${incoming.length})</h3>
-      <div class="surface" style="margin-bottom:24px;">${incoming.map(b=>renderBillCard(b, true, false)).join('')}</div>
-    `;
-  }
   if(payment.length){
     sections += `
-      <h3 class="section-h">Approved — ready for payment (${payment.length})</h3>
+      <h3 class="section-h" style="margin-top:4px;">Approved — ready for payment (${payment.length})</h3>
       <div class="surface" style="margin-bottom:24px;">${payment.map(b=>renderBillCard(b, true, false)).join('')}</div>
     `;
   }
@@ -1728,7 +1754,7 @@ function renderQueue(){
 
   return `
     <h2 class="panel-title">My Queue — ${label}</h2>
-    <p class="panel-sub">Newly marked bills need acknowledgment first, so nothing sits unseen. Once acknowledged, verify, add remarks, and mark them on — tick a few and mark them on together.</p>
+    <p class="panel-sub">Verify, add remarks, and mark them on — tick a few and mark them on together.</p>
     <div id="flashNotice" class="notice"></div>
     ${sections}
   `;
@@ -1789,6 +1815,7 @@ function filteredTrackBills(){
     list = list.filter(b=>b.status===trackFilters.status);
   }
   if(session.type!=='branch' && trackFilters.dept!=='all') list = list.filter(b=> b.status==='with_department' && b.currentHolder===trackFilters.dept);
+  if(session.type!=='branch' && trackFilters.branch!=='all') list = list.filter(b=> b.originType==='branch' && b.originId===trackFilters.branch);
   list.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
   return list;
 }
@@ -1817,6 +1844,11 @@ function renderTrack(){
         <option value="all">Currently with any department</option>
         ${DEPARTMENTS.map(d=>`<option value="${d.id}" ${trackFilters.dept===d.id?'selected':''}>${d.name}</option>`).join('')}
       </select>` : '';
+  const branchFilterHtml = session.type!=='branch' ? `
+      <select id="trackBranch">
+        <option value="all">Sent by any branch</option>
+        ${BRANCHES.map(b=>`<option value="${escapeHtml(b)}" ${trackFilters.branch===b?'selected':''}>${escapeHtml(b)}</option>`).join('')}
+      </select>` : '';
 
   const body = list.length
     ? `<div class="surface">${list.map(b=>renderBillCard(b, isInMyQueue(b))).join('')}</div>`
@@ -1839,6 +1871,7 @@ function renderTrack(){
           <option value="rejected" ${trackFilters.status==='rejected'?'selected':''}>Rejected</option>
         </select>
         ${deptFilterHtml}
+        ${branchFilterHtml}
       </div>
       <div class="btn-row" style="margin-top:14px;">
         <button type="button" class="ghost small" id="btnResetFilters">Reset filters</button>
@@ -1971,10 +2004,15 @@ function renderBillCard(bill, actionable, selectable){
     const isPayment = isPaymentItem(bill);
 
     if(needsAcknowledgment){
+      let howItArrived, whatComesNext;
+      if(bill.status==='rejected'){ howItArrived = 'was just rejected back to'; whatComesNext = 'fixing and resubmitting it'; }
+      else if(bill.status==='returned_to_branch'){ howItArrived = 'was just returned to'; whatComesNext = 'fixing and resubmitting it'; }
+      else if(bill.status==='approved'){ howItArrived = 'was just approved by Management and sent to'; whatComesNext = 'recording the payment'; }
+      else { howItArrived = 'was just marked to'; whatComesNext = 'verifying and marking it on'; }
       actionHtml = `
         <div class="action-box ack-box">
           <h4 class="section-h">New — needs acknowledgment</h4>
-          <p class="form-note" style="margin:0 0 10px 0;">This bill was just marked to ${escapeHtml(session.name)}. Acknowledge receipt before verifying and marking it on, so it's never left sitting unseen.</p>
+          <p class="form-note" style="margin:0 0 10px 0;">This bill ${howItArrived} ${escapeHtml(session.name)}. Acknowledge receipt before ${whatComesNext}, so it's never left sitting unseen.</p>
           <div class="action-row">
             <div class="field" style="flex:1;">
               <label>Remarks (optional)</label>
@@ -2321,7 +2359,7 @@ function attachHandlers(){
 
   document.querySelectorAll('.stat-card[data-goto-status]').forEach(card=>{
     card.addEventListener('click', ()=>{
-      trackFilters = {q:'', status:card.dataset.gotoStatus, dept:'all'};
+      trackFilters = {q:'', status:card.dataset.gotoStatus, dept:'all', branch:'all'};
       tab = 'track';
       expandedId = null;
       selectedBillIds.clear();
@@ -2330,7 +2368,7 @@ function attachHandlers(){
   });
   document.querySelectorAll('.dept-load-item[data-goto-dept]').forEach(row=>{
     row.addEventListener('click', ()=>{
-      trackFilters = {q:'', status:'with_department', dept:row.dataset.gotoDept};
+      trackFilters = {q:'', status:'with_department', dept:row.dataset.gotoDept, branch:'all'};
       tab = 'track';
       expandedId = null;
       selectedBillIds.clear();
@@ -2376,9 +2414,11 @@ function attachHandlers(){
   if(statusEl) statusEl.addEventListener('change', ()=>{ trackFilters.status = statusEl.value; render(); });
   const deptEl = document.getElementById('trackDept');
   if(deptEl) deptEl.addEventListener('change', ()=>{ trackFilters.dept = deptEl.value; render(); });
+  const branchEl = document.getElementById('trackBranch');
+  if(branchEl) branchEl.addEventListener('change', ()=>{ trackFilters.branch = branchEl.value; render(); });
   const resetFiltersBtn = document.getElementById('btnResetFilters');
   if(resetFiltersBtn) resetFiltersBtn.addEventListener('click', ()=>{
-    trackFilters = {q:'', status:'all', dept:'all'};
+    trackFilters = {q:'', status:'all', dept:'all', branch:'all'};
     render();
   });
   const exportCsvBtn = document.getElementById('btnExportCsv');
