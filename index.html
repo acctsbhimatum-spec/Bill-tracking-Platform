@@ -828,6 +828,11 @@ function addDepartment(name, canEnter){
 async function saveOrgStructure(){
   try{ await kvSet(ORG_KEY, {branches:BRANCHES, departments:DEPARTMENTS}); }catch(e){ console.error(e); }
 }
+async function clearAllBills(){
+  bills = [];
+  selectedBillIds.clear();
+  await saveBills();
+}
 
 /* ---------------- persistence ---------------- */
 const TIMED_OUT = Symbol('timed-out');
@@ -1939,6 +1944,18 @@ function renderUsers(){
         <tbody>${rows}</tbody>
       </table>
     </div>
+
+    <div class="surface" style="padding:20px 22px; margin-top:24px; border-color:var(--rejected);">
+      <h3 class="section-h" style="color:var(--rejected);">Danger zone</h3>
+      <p class="form-note" style="margin:0 0 12px 0;">Permanently deletes every bill in the register — every branch, every department, every movement trail and payment record. Logins, branches and departments are <b>not</b> affected. This cannot be undone.</p>
+      <form id="clearBillsForm" class="action-row" style="margin-top:0;">
+        <div class="field" style="flex:1;">
+          <label>Type CLEAR ALL BILLS to confirm</label>
+          <input type="text" id="clearBillsConfirm" placeholder="CLEAR ALL BILLS" autocomplete="off">
+        </div>
+        <button type="submit" class="ghost small" id="btnClearBills" style="border-color:var(--rejected); color:var(--rejected);" disabled>Clear all bills</button>
+      </form>
+    </div>
   `;
 }
 
@@ -2354,6 +2371,25 @@ function attachHandlers(){
       await saveUsers();
       render();
       flashNotice(name.trim() + ' added under Corporate, login ready on password 0000.');
+    });
+  }
+
+  const clearBillsConfirmInput = document.getElementById('clearBillsConfirm');
+  const clearBillsBtn = document.getElementById('btnClearBills');
+  if(clearBillsConfirmInput && clearBillsBtn){
+    clearBillsConfirmInput.addEventListener('input', ()=>{
+      clearBillsBtn.disabled = clearBillsConfirmInput.value.trim() !== 'CLEAR ALL BILLS';
+    });
+  }
+  const clearBillsForm = document.getElementById('clearBillsForm');
+  if(clearBillsForm){
+    clearBillsForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(clearBillsConfirmInput.value.trim() !== 'CLEAR ALL BILLS') return;
+      const total = bills.length;
+      await clearAllBills();
+      render();
+      flashNotice(`All ${total} bill${total===1?'':'s'} cleared from the register.`);
     });
   }
 
