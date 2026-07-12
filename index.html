@@ -45,13 +45,10 @@ body{
 
 .app{
   position:relative;
-  max-width:1180px;
+  width:100%;
+  max-width:1800px;
   margin:0 auto;
-  padding:0 28px 80px 28px;
-}
-
-@media (max-width:680px){
-  .app{padding:0 16px 60px 16px;}
+  padding:0 clamp(16px, 3.5vw, 64px) 80px clamp(16px, 3.5vw, 64px);
 }
 
 /* ---------- Topbar ---------- */
@@ -852,10 +849,15 @@ async function kvSet(key, value){
   const { error } = await sb.from('app_kv').upsert({ key, value, updated_at: new Date().toISOString() });
   if(error) console.error('Supabase write error', error);
 }
-async function loadAll(){
+async function loadOrgAndUsers(){
   connectionWarning = '';
 
-  let v = await withTimeout(kvGet(ORG_KEY));
+  const [orgRes, usersRes] = await Promise.all([
+    withTimeout(kvGet(ORG_KEY)),
+    withTimeout(kvGet(USERS_KEY))
+  ]);
+
+  let v = orgRes;
   if(v===TIMED_OUT){ connectionWarning = 'Could not reach the database.'; v = null; }
   if(v && Array.isArray(v.branches) && Array.isArray(v.departments)){
     BRANCHES = v.branches;
@@ -867,11 +869,7 @@ async function loadAll(){
   }
   if(!deptById(deptTab)) deptTab = DEPARTMENTS[0].id;
 
-  let vb = await withTimeout(kvGet(BILLS_KEY));
-  if(vb===TIMED_OUT){ connectionWarning = connectionWarning || 'Could not reach the database.'; vb = null; }
-  bills = vb || [];
-
-  let vu = await withTimeout(kvGet(USERS_KEY));
+  let vu = usersRes;
   if(vu===TIMED_OUT){ connectionWarning = connectionWarning || 'Could not reach the database.'; vu = null; }
   if(vu){
     users = vu;
@@ -881,6 +879,15 @@ async function loadAll(){
   }
 
   dataLoaded = true;
+}
+async function loadBills(){
+  const vb = await withTimeout(kvGet(BILLS_KEY));
+  if(vb===TIMED_OUT){ connectionWarning = connectionWarning || 'Could not reach the database.'; bills = bills || []; }
+  else bills = vb || [];
+}
+async function loadAll(){
+  connectionWarning = '';
+  await Promise.all([loadOrgAndUsers(), loadBills()]);
 }
 async function saveBills(){ try{ await withTimeout(kvSet(BILLS_KEY, bills)); }catch(e){ console.error(e); } }
 async function saveUsers(){ try{ await withTimeout(kvSet(USERS_KEY, users)); }catch(e){ console.error(e); } }
@@ -1303,7 +1310,7 @@ function renderLogin(){
   }
   const form = document.getElementById('loginForm');
   if(form){
-    form.addEventListener('submit', (e)=>{
+    form.addEventListener('submit', async (e)=>{
       e.preventDefault();
       if(!dataLoaded){
         loginError = 'Still connecting — please wait a moment and try again.';
@@ -1328,6 +1335,9 @@ function renderLogin(){
       session = {id: uname, type: rec.type, name: rec.name};
       tab = 'dashboard';
       loginType = ''; loginSpecific = ''; loginBranchDept = '';
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if(submitBtn){ submitBtn.disabled = true; submitBtn.textContent = 'Logging in…'; }
+      if(billsPrefetch) await billsPrefetch;
       renderApp();
     });
   }
@@ -2399,9 +2409,11 @@ function renderLoadingScreen(){
   `;
 }
 
+let billsPrefetch = null;
 async function init(){
   renderLoadingScreen();
-  await loadAll();
+  await loadOrgAndUsers();
+  billsPrefetch = loadBills(); // keep loading in the background while the person picks their login
   renderLogin();
 }
 init();
