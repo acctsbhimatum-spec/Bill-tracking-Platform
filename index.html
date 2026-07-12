@@ -8,33 +8,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 :root{
-  --ink:#E7EAF0;
-  --ink-soft:#8A94A6;
-  --paper:#0B0E14;
-  --paper-raised:#131722;
-  --paper-deep:#1B202C;
-  --rule:#212636;
-  --rule-strong:#323A4E;
-  --accent:#5B7FFF;
-  --accent-strong:#3450D6;
-  --accent-soft:#161D33;
+  --ink:#EDEAE0;
+  --ink-soft:#9B9788;
+  --paper:#0E0D0A;
+  --paper-raised:#18160F;
+  --paper-deep:#211E14;
+  --rule:#2C2818;
+  --rule-strong:#433C22;
+  --accent:#F2C158;
+  --accent-strong:#E0A72E;
+  --accent-ink:#161307;
+  --accent-soft:#2A2110;
   --pending:#4FB3D9;
   --pending-soft:#11212B;
   --approved:#34D399;
-  --hold:#FBBF24;
-  --hold-soft:#2B2310;
   --approved-soft:#0F2B22;
+  --hold:#E0873C;
+  --hold-soft:#2E2010;
   --rejected:#F87171;
   --rejected-soft:#2C1717;
   --white:#FFFFFF;
-  --shadow: 0 1px 2px rgba(0,0,0,0.35), 0 10px 28px rgba(0,0,0,0.35);
+  --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 10px 28px rgba(0,0,0,0.4);
 }
 
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
 body{
   background-color:var(--paper);
-  background-image: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(91,127,255,0.08), transparent 70%);
+  background-image: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(242,193,88,0.06), transparent 70%);
   background-repeat:no-repeat;
   color:var(--ink);
   font-family:'Inter', sans-serif;
@@ -56,15 +57,71 @@ body{
 /* ---------- Topbar ---------- */
 .topbar{
   display:flex;
-  align-items:center;
+  align-items:flex-start;
   justify-content:space-between;
   flex-wrap:wrap;
-  gap:18px;
-  padding:22px 0;
-  border-bottom:1px solid var(--rule);
-  margin-bottom:4px;
+  gap:16px;
+  padding:24px 0 18px 0;
 }
-.brand{display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+.topbar-main{display:flex; align-items:center; gap:14px; flex-wrap:wrap;}
+.avatar-badge{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:50px;
+  height:50px;
+  border-radius:50%;
+  border:2px solid var(--accent);
+  color:var(--accent);
+  font-family:'Inter', sans-serif;
+  font-weight:800;
+  font-size:16px;
+  letter-spacing:0.3px;
+  flex-shrink:0;
+}
+.topbar-titles{display:flex; flex-direction:column; gap:2px;}
+.topbar-title{
+  font-family:'Inter', sans-serif;
+  font-size:21px;
+  font-weight:800;
+  color:var(--ink);
+  letter-spacing:-0.01em;
+}
+.topbar-subtitle{
+  font-size:12px;
+  font-weight:700;
+  color:var(--accent);
+  text-transform:uppercase;
+  letter-spacing:0.7px;
+}
+.topbar-actions{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.topbar-divider{height:3px; background:var(--accent); border-radius:2px; margin-bottom:4px;}
+
+.role-pill{
+  display:inline-flex;
+  align-items:center;
+  border:1.5px solid var(--accent);
+  color:var(--accent);
+  border-radius:20px;
+  padding:7px 14px;
+  font-size:11px;
+  font-weight:700;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  white-space:nowrap;
+}
+.user-pill{
+  display:inline-flex;
+  align-items:center;
+  background:var(--accent-strong);
+  color:var(--accent-ink);
+  border-radius:20px;
+  padding:8px 16px;
+  font-size:13px;
+  font-weight:700;
+  white-space:nowrap;
+}
+
 .brand-icon{
   display:flex;
   align-items:center;
@@ -83,21 +140,6 @@ body{
   color:var(--ink);
   letter-spacing:-0.01em;
 }
-.identity{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  flex-wrap:wrap;
-}
-.session-card{
-  display:flex;
-  flex-direction:column;
-  gap:1px;
-  text-align:right;
-}
-.session-card .who{font-weight:700; font-size:14px;}
-.session-card .role{font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.6px;}
-.identity-actions{display:flex; gap:8px;}
 
 label{
   font-size:11px;
@@ -177,9 +219,9 @@ select:focus, input:focus, textarea:focus{
 .tabs.subtabs .tab.active{
   background:var(--accent-strong);
   border-color:var(--accent-strong);
-  color:var(--white);
+  color:var(--accent-ink);
 }
-.tabs.subtabs .tab.active .count{background:rgba(255,255,255,0.2); color:var(--white);}
+.tabs.subtabs .tab.active .count{background:rgba(22,19,7,0.18); color:var(--accent-ink);}
 
 main{padding-top:26px;}
 
@@ -254,7 +296,15 @@ button.primary.wide{width:100%; padding:12px; font-size:14.5px;}
 }
 .stat-card{
   padding:16px 18px;
-  border-left:4px solid var(--accent);
+  border-top:3px solid var(--accent);
+}
+.stat-card.clickable{
+  cursor:pointer;
+  transition:transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+}
+.stat-card.clickable:hover{
+  background:var(--paper-deep);
+  transform:translateY(-2px);
 }
 .stat-card .num{
   font-family:'IBM Plex Mono', monospace;
@@ -284,7 +334,10 @@ button.primary.wide{width:100%; padding:12px; font-size:14.5px;}
   display:flex;
   justify-content:space-between;
   align-items:center;
+  cursor:pointer;
+  transition:background 0.1s ease;
 }
+.dept-load-item:hover{background:var(--paper-deep);}
 .dept-load-item .name{font-size:13.5px; font-weight:600;}
 .dept-load-item .n{
   font-family:'IBM Plex Mono', monospace;
@@ -361,17 +414,17 @@ textarea{resize:vertical; min-height:64px; font-family:'Inter',sans-serif;}
 
 button.primary{
   font-family:'Inter', sans-serif;
-  font-weight:600;
+  font-weight:700;
   font-size:14px;
   background:var(--accent-strong);
-  color:var(--white);
+  color:var(--accent-ink);
   border:none;
   border-radius:7px;
   padding:10px 20px;
   cursor:pointer;
   transition:background 0.12s ease, transform 0.05s ease;
 }
-button.primary:hover{background:#4360E8;}
+button.primary:hover{background:var(--accent);}
 button.primary:active{transform:translateY(1px);}
 button.ghost{
   font-family:'Inter', sans-serif;
@@ -413,11 +466,16 @@ button.link{
 }
 
 /* ---------- Bill list / cards ---------- */
+.filter-panel{
+  padding:20px 22px;
+  margin-bottom:20px;
+  border-top:3px solid var(--accent);
+}
 .filters{
   display:flex;
   flex-wrap:wrap;
   gap:10px;
-  margin-bottom:18px;
+  margin-bottom:0;
 }
 .filters input, .filters select{padding:8px 10px; font-size:13px;}
 .filters input{flex:1; min-width:180px;}
@@ -656,25 +714,32 @@ const SUPABASE_ANON_KEY = 'YOUR-ANON-PUBLIC-KEY';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ---------------- constants ---------------- */
-const BRANCHES = ["Trivandrum","Pothencode","Attingal","Kasaragod","Kanhangad","Theni","Vellore","Ramnad","Cuddalore","Pondicherry"];
+const DEFAULT_BRANCHES = ["Trivandrum","Pothencode","Attingal","Kasaragod","Kanhangad","Theni","Vellore","Ramnad","Cuddalore","Pondicherry"];
+let BRANCHES = DEFAULT_BRANCHES.slice();
 
 const BRANCH_SUBDEPTS = [
   {id:'accounts',  name:'Accounts Department'},
   {id:'marketing', name:'Marketing Department'}
 ];
 
-const DEPARTMENTS = [
+const DEFAULT_DEPARTMENTS = [
   {id:'finance',    name:'Finance Department',        code:'FIN', canEnterBills:true},
   {id:'marketing',  name:'Marketing Department',      code:'MKT', canEnterBills:true},
   {id:'audit',      name:'Audit Department',          code:'AUD', canEnterBills:false},
   {id:'gm',         name:'General Manager',           code:'GM',  canEnterBills:false},
   {id:'management', name:'Approved by Management',    code:'MGT', canEnterBills:false}
 ];
+let DEPARTMENTS = DEFAULT_DEPARTMENTS.map(d=>({...d}));
 
 const BILLS_KEY = 'billdak-bills-v1';
 const USERS_KEY = 'billdak-users-v1';
+const ORG_KEY = 'billdak-org-v1';
 const DEFAULT_PASSWORD = '0000';
 const APPROVAL_SLA_DAYS = 3; // max days a department has to approve, reject or mark on a bill
+
+// Org identity shown in the header — edit these two to match your actual company name.
+const ORG_NAME = 'Bhima Jewellery';
+const ORG_SHORT = 'BJ';
 
 /* ---------------- state ---------------- */
 let bills = [];
@@ -695,6 +760,8 @@ let importFileName = '';
 let deptTab = DEPARTMENTS[0].id;
 let editingBillId = null;
 let selectedBillIds = new Set();
+let addBranchError = '';
+let addDeptError = '';
 
 /* ---------------- helpers ---------------- */
 function deptById(id){ return DEPARTMENTS.find(d=>d.id===id); }
@@ -712,6 +779,14 @@ function canEnterBills(){
   }
   return false;
 }
+function slugify(name){
+  return name.toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') || 'dept';
+}
+function codeFromName(name){
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  let code = words.length>1 ? words.map(w=>w[0]).join('') : name.slice(0,3);
+  return code.toUpperCase().slice(0,4);
+}
 
 /* ---------------- default users ---------------- */
 function buildDefaultUsers(){
@@ -727,6 +802,35 @@ function buildDefaultUsers(){
   return u;
 }
 
+/* ---------------- org structure mutations (admin) ---------------- */
+function addBranch(name){
+  const trimmed = name.trim();
+  if(!trimmed){ addBranchError = 'Enter a branch name.'; return false; }
+  if(BRANCHES.some(b=>b.toLowerCase()===trimmed.toLowerCase())){ addBranchError = 'A branch with that name already exists.'; return false; }
+  BRANCHES.push(trimmed);
+  BRANCH_SUBDEPTS.forEach(sd=>{
+    const key = trimmed + '::' + sd.id;
+    users[key] = {password:DEFAULT_PASSWORD, type:'branch', name: trimmed + ' — ' + sd.name, branch:trimmed, branchDept:sd.id};
+  });
+  addBranchError = '';
+  return true;
+}
+function addDepartment(name, canEnter){
+  const trimmed = name.trim();
+  if(!trimmed){ addDeptError = 'Enter a department name.'; return false; }
+  if(DEPARTMENTS.some(d=>d.name.toLowerCase()===trimmed.toLowerCase())){ addDeptError = 'A department with that name already exists.'; return false; }
+  let id = slugify(trimmed);
+  let suffix = 2;
+  while(DEPARTMENTS.some(d=>d.id===id)){ id = slugify(trimmed) + '-' + suffix; suffix++; }
+  DEPARTMENTS.push({id, name:trimmed, code:codeFromName(trimmed), canEnterBills: !!canEnter});
+  users[id] = {password:DEFAULT_PASSWORD, type:'department', name:trimmed};
+  addDeptError = '';
+  return true;
+}
+async function saveOrgStructure(){
+  try{ await kvSet(ORG_KEY, {branches:BRANCHES, departments:DEPARTMENTS}); }catch(e){ console.error(e); }
+}
+
 /* ---------------- persistence ---------------- */
 async function kvGet(key){
   const { data, error } = await sb.from('app_kv').select('value').eq('key', key).maybeSingle();
@@ -738,6 +842,22 @@ async function kvSet(key, value){
   if(error) console.error('Supabase write error', error);
 }
 async function loadAll(){
+  try{
+    const v = await kvGet(ORG_KEY);
+    if(v && Array.isArray(v.branches) && Array.isArray(v.departments)){
+      BRANCHES = v.branches;
+      DEPARTMENTS = v.departments;
+    }else{
+      BRANCHES = DEFAULT_BRANCHES.slice();
+      DEPARTMENTS = DEFAULT_DEPARTMENTS.map(d=>({...d}));
+      await kvSet(ORG_KEY, {branches:BRANCHES, departments:DEPARTMENTS});
+    }
+  }catch(e){
+    BRANCHES = DEFAULT_BRANCHES.slice();
+    DEPARTMENTS = DEFAULT_DEPARTMENTS.map(d=>({...d}));
+  }
+  if(!deptById(deptTab)) deptTab = DEPARTMENTS[0].id;
+
   try{
     const v = await kvGet(BILLS_KEY);
     bills = v || [];
@@ -1178,11 +1298,17 @@ function renderLogin(){
   if(form){
     form.addEventListener('submit', (e)=>{
       e.preventDefault();
+      if(!dataLoaded){
+        loginError = 'Still connecting — please wait a moment and try again.';
+        renderLogin();
+        return;
+      }
       let uname = '';
       if(loginType==='admin') uname = 'admin';
       else if(loginType==='department') uname = loginSpecific;
       else if(loginType==='branch') uname = loginSpecific + '::' + loginBranchDept;
-      if(!uname || !users[uname]){ loginError = 'Complete the selection above first.'; renderLogin(); return; }
+      if(!uname){ loginError = 'Complete the selection above first.'; renderLogin(); return; }
+      if(!users[uname]){ loginError = 'That login could not be found. Try refreshing the page.'; renderLogin(); return; }
       const passEl = document.getElementById('loginPass');
       const pass = passEl ? passEl.value : '';
       const rec = users[uname];
@@ -1206,26 +1332,22 @@ function renderApp(){
   root.innerHTML = `
     <div class="app">
       <header class="topbar">
-        <div class="brand">
-          <span class="brand-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
-              <path d="M9 13.5l2 2 4-4.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-          <span class="brand-sub">Bill Movement &amp; Approval Register</span>
+        <div class="topbar-main">
+          <span class="avatar-badge">${escapeHtml(ORG_SHORT)}</span>
+          <div class="topbar-titles">
+            <div class="topbar-title">${escapeHtml(session.name)}</div>
+            <div class="topbar-subtitle">${escapeHtml(ORG_NAME)} &middot; Bill Movement &amp; Approval Register</div>
+          </div>
         </div>
-        <div class="identity">
-          <div class="session-card">
-            <span class="who">${escapeHtml(session.name)}</span>
-            <span class="role">${roleLabel(session.type)}</span>
-          </div>
-          <div class="identity-actions">
-            <button class="ghost small" id="btnChangePw">Change password</button>
-            <button class="ghost small" id="btnLogout">Log out</button>
-          </div>
+        <div class="topbar-actions">
+          <button class="primary small" id="btnRefreshData" title="Reload the latest bills and logins">&#8635; Refresh</button>
+          <button class="ghost small" id="btnChangePw">Change password</button>
+          <span class="role-pill">${roleLabel(session.type)}</span>
+          <span class="user-pill">${escapeHtml(session.name)}</span>
+          <button class="ghost small" id="btnLogout">Log out</button>
         </div>
       </header>
+      <div class="topbar-divider"></div>
 
       <nav class="tabs" id="tabs">
         <button class="tab" data-tab="dashboard">Dashboard</button>
@@ -1258,12 +1380,24 @@ function renderApp(){
     pwPanelOpen = !pwPanelOpen; pwError='';
     render();
   });
+  document.getElementById('btnRefreshData').addEventListener('click', async (e)=>{
+    const btn = e.currentTarget;
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = 'Refreshing…';
+    await loadAll();
+    render();
+    btn.disabled = false;
+    btn.innerHTML = original;
+    flashNotice('Up to date.');
+  });
   document.getElementById('tabs').addEventListener('click', (e)=>{
     const btn = e.target.closest('.tab');
     if(!btn) return;
     tab = btn.dataset.tab;
     expandedId = null;
     selectedBillIds.clear();
+    addBranchError = ''; addDeptError = '';
     render();
   });
 
@@ -1358,7 +1492,7 @@ function renderDashboard(){
       const deptBills = scoped.filter(b=>b.status==='with_department' && b.currentHolder===d.id);
       const n = deptBills.length;
       const overdueN = deptBills.filter(b=>dueInfo(b)?.cls==='overdue').length;
-      return `<div class="surface dept-load-item"><span class="name">${d.name}</span><span class="n">${n}${overdueN?` <span style="color:var(--rejected);">· ${overdueN} overdue</span>`:''}</span></div>`;
+      return `<div class="surface dept-load-item" data-goto-dept="${d.id}"><span class="name">${d.name}</span><span class="n">${n}${overdueN?` <span style="color:var(--rejected);">· ${overdueN} overdue</span>`:''}</span></div>`;
     }).join('');
     loadSection = `<h3 class="section-h">Bills currently held, by department <span class="form-note">— each department has ${APPROVAL_SLA_DAYS} days to act on a bill</span></h3><div class="dept-load">${loadRows}</div>`;
   }
@@ -1381,15 +1515,15 @@ function renderDashboard(){
 
   return `
     <h2 class="panel-title">Register overview</h2>
-    <p class="panel-sub">${introText}</p>
+    <p class="panel-sub">${introText} <span class="form-note">Click any card to see the bills behind it.</span></p>
     <div class="stat-grid">
-      <div class="surface stat-card"><div class="num">${total}</div><div class="lbl">Total bills logged</div></div>
-      <div class="surface stat-card pending"><div class="num">${pending}</div><div class="lbl">With a department</div></div>
-      <div class="surface stat-card rejected"><div class="num">${overdue}</div><div class="lbl">Overdue (past ${APPROVAL_SLA_DAYS} days)</div></div>
-      <div class="surface stat-card hold"><div class="num">${held}</div><div class="lbl">Returned to branch</div></div>
-      <div class="surface stat-card hold"><div class="num">${paymentPending}</div><div class="lbl">Approved — payment pending</div></div>
-      <div class="surface stat-card approved"><div class="num">${paid}</div><div class="lbl">Paid</div></div>
-      <div class="surface stat-card rejected"><div class="num">${rejected}</div><div class="lbl">Rejected</div></div>
+      <div class="surface stat-card clickable" data-goto-status="all"><div class="num">${total}</div><div class="lbl">Total bills logged</div></div>
+      <div class="surface stat-card pending clickable" data-goto-status="with_department"><div class="num">${pending}</div><div class="lbl">With a department</div></div>
+      <div class="surface stat-card rejected clickable" data-goto-status="overdue"><div class="num">${overdue}</div><div class="lbl">Overdue (past ${APPROVAL_SLA_DAYS} days)</div></div>
+      <div class="surface stat-card hold clickable" data-goto-status="returned_to_branch"><div class="num">${held}</div><div class="lbl">Returned to branch</div></div>
+      <div class="surface stat-card hold clickable" data-goto-status="approved"><div class="num">${paymentPending}</div><div class="lbl">Approved — payment pending</div></div>
+      <div class="surface stat-card approved clickable" data-goto-status="paid"><div class="num">${paid}</div><div class="lbl">Paid</div></div>
+      <div class="surface stat-card rejected clickable" data-goto-status="rejected"><div class="num">${rejected}</div><div class="lbl">Rejected</div></div>
     </div>
     ${loadSection}
     <h3 class="section-h">Recent movement</h3>
@@ -1628,13 +1762,38 @@ function renderMyLoggedBills(){
   `;
 }
 
-function renderTrack(){
+function filteredTrackBills(){
   const q = trackFilters.q.trim().toLowerCase();
   let list = visibleBills();
   if(q) list = list.filter(b=> b.billNo.toLowerCase().includes(q) || b.vendor.toLowerCase().includes(q) || b.branch.toLowerCase().includes(q));
-  if(trackFilters.status!=='all') list = list.filter(b=>b.status===trackFilters.status);
+  if(trackFilters.status==='overdue'){
+    list = list.filter(b=> dueInfo(b)?.cls==='overdue');
+  }else if(trackFilters.status!=='all'){
+    list = list.filter(b=>b.status===trackFilters.status);
+  }
   if(session.type!=='branch' && trackFilters.dept!=='all') list = list.filter(b=> b.status==='with_department' && b.currentHolder===trackFilters.dept);
   list.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  return list;
+}
+function exportBillsToCSV(list){
+  const headers = ['Bill No','Party','Amount','Bill Date','Status','Branch / Origin','Logged On'];
+  const rows = list.map(b=>[b.billNo, b.vendor, b.amount, b.billDate, statusInfo(b).label, b.branch, fmtDate(b.createdAt)]);
+  const csv = [headers, ...rows].map(r=> r.map(cell=>{
+    const s = String(cell==null?'':cell).replace(/"/g,'""');
+    return /[",\n]/.test(s) ? `"${s}"` : s;
+  }).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'bills-export-' + new Date().toISOString().slice(0,10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function renderTrack(){
+  const list = filteredTrackBills();
 
   const deptFilterHtml = session.type!=='branch' ? `
       <select id="trackDept">
@@ -1649,17 +1808,25 @@ function renderTrack(){
   return `
     <h2 class="panel-title">${session.type==='branch' ? 'My Bills — ' + session.name : 'Track All Bills'}</h2>
     <p class="panel-sub">${session.type==='branch' ? 'Every bill ' + escapeHtml(session.name) + ' has logged, and where it stands right now.' : 'Every bill in the register and its full movement trail, department to department.'}</p>
-    <div class="filters">
-      <input type="text" id="trackSearch" placeholder="Search bill no. or party…" value="${escapeHtml(trackFilters.q)}">
-      <select id="trackStatus">
-        <option value="all" ${trackFilters.status==='all'?'selected':''}>All statuses</option>
-        <option value="with_department" ${trackFilters.status==='with_department'?'selected':''}>With a department</option>
-        <option value="returned_to_branch" ${trackFilters.status==='returned_to_branch'?'selected':''}>Returned to branch</option>
-        <option value="approved" ${trackFilters.status==='approved'?'selected':''}>Approved — payment pending</option>
-        <option value="paid" ${trackFilters.status==='paid'?'selected':''}>Paid</option>
-        <option value="rejected" ${trackFilters.status==='rejected'?'selected':''}>Rejected</option>
-      </select>
-      ${deptFilterHtml}
+    <div id="flashNotice" class="notice"></div>
+    <div class="surface filter-panel">
+      <div class="filters">
+        <input type="text" id="trackSearch" placeholder="Search bill no. or party…" value="${escapeHtml(trackFilters.q)}">
+        <select id="trackStatus">
+          <option value="all" ${trackFilters.status==='all'?'selected':''}>All statuses</option>
+          <option value="with_department" ${trackFilters.status==='with_department'?'selected':''}>With a department</option>
+          <option value="overdue" ${trackFilters.status==='overdue'?'selected':''}>Overdue</option>
+          <option value="returned_to_branch" ${trackFilters.status==='returned_to_branch'?'selected':''}>Returned to branch</option>
+          <option value="approved" ${trackFilters.status==='approved'?'selected':''}>Approved — payment pending</option>
+          <option value="paid" ${trackFilters.status==='paid'?'selected':''}>Paid</option>
+          <option value="rejected" ${trackFilters.status==='rejected'?'selected':''}>Rejected</option>
+        </select>
+        ${deptFilterHtml}
+      </div>
+      <div class="btn-row" style="margin-top:14px;">
+        <button type="button" class="ghost small" id="btnResetFilters">Reset filters</button>
+        <button type="button" class="ghost small" id="btnExportCsv">Export CSV</button>
+      </div>
     </div>
     ${body}
   `;
@@ -1683,6 +1850,39 @@ function renderUsers(){
     <h2 class="panel-title">Manage Logins</h2>
     <p class="panel-sub">Every showroom and department login, and whether it's still on the default password. Reset any login back to <b>0000</b> if someone's locked out.</p>
     <div id="flashNotice" class="notice"></div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px;">
+      <div class="surface" style="padding:20px 22px;">
+        <h3 class="section-h">Add a branch</h3>
+        <p class="form-note" style="margin:0 0 12px 0;">Creates the branch plus its two logins (Accounts Department &amp; Marketing Department), both starting on password 0000.</p>
+        ${addBranchError ? `<div class="notice error show" style="position:static;">${escapeHtml(addBranchError)}</div>` : ''}
+        <form id="addBranchForm" class="action-row" style="margin-top:0;">
+          <div class="field" style="flex:1;">
+            <label>Branch name</label>
+            <input type="text" name="branchName" placeholder="e.g. Kollam" required>
+          </div>
+          <button type="submit" class="primary small">Add branch</button>
+        </form>
+      </div>
+      <div class="surface" style="padding:20px 22px;">
+        <h3 class="section-h">Add a corporate department</h3>
+        <p class="form-note" style="margin:0 0 12px 0;">Creates one new login under Corporate, starting on password 0000.</p>
+        ${addDeptError ? `<div class="notice error show" style="position:static;">${escapeHtml(addDeptError)}</div>` : ''}
+        <form id="addDeptForm" class="action-row" style="margin-top:0;">
+          <div class="field" style="flex:1;">
+            <label>Department name</label>
+            <input type="text" name="deptName" placeholder="e.g. HR Department" required>
+          </div>
+          <div class="field">
+            <label style="display:flex; align-items:center; gap:6px; text-transform:none; letter-spacing:0; font-size:13px; color:var(--ink);">
+              <input type="checkbox" name="canEnterBills" style="width:auto;"> Can raise its own bills
+            </label>
+          </div>
+          <button type="submit" class="primary small">Add department</button>
+        </form>
+      </div>
+    </div>
+
     <div class="surface">
       <table class="user-table">
         <thead><tr><th>Login</th><th>Role</th><th>Password status</th><th></th></tr></thead>
@@ -2074,6 +2274,53 @@ function attachHandlers(){
     });
   });
 
+  const addBranchForm = document.getElementById('addBranchForm');
+  if(addBranchForm){
+    addBranchForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(addBranchForm);
+      const name = fd.get('branchName') || '';
+      if(!addBranch(String(name))){ render(); return; }
+      await saveOrgStructure();
+      await saveUsers();
+      render();
+      flashNotice(name.trim() + ' added, with Accounts and Marketing logins ready on password 0000.');
+    });
+  }
+  const addDeptForm = document.getElementById('addDeptForm');
+  if(addDeptForm){
+    addDeptForm.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(addDeptForm);
+      const name = fd.get('deptName') || '';
+      const canEnter = fd.get('canEnterBills') === 'on';
+      if(!addDepartment(String(name), canEnter)){ render(); return; }
+      await saveOrgStructure();
+      await saveUsers();
+      render();
+      flashNotice(name.trim() + ' added under Corporate, login ready on password 0000.');
+    });
+  }
+
+  document.querySelectorAll('.stat-card[data-goto-status]').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      trackFilters = {q:'', status:card.dataset.gotoStatus, dept:'all'};
+      tab = 'track';
+      expandedId = null;
+      selectedBillIds.clear();
+      render();
+    });
+  });
+  document.querySelectorAll('.dept-load-item[data-goto-dept]').forEach(row=>{
+    row.addEventListener('click', ()=>{
+      trackFilters = {q:'', status:'with_department', dept:row.dataset.gotoDept};
+      tab = 'track';
+      expandedId = null;
+      selectedBillIds.clear();
+      render();
+    });
+  });
+
   document.querySelectorAll('.dept-subtab').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       deptTab = btn.dataset.dept;
@@ -2112,12 +2359,43 @@ function attachHandlers(){
   if(statusEl) statusEl.addEventListener('change', ()=>{ trackFilters.status = statusEl.value; render(); });
   const deptEl = document.getElementById('trackDept');
   if(deptEl) deptEl.addEventListener('change', ()=>{ trackFilters.dept = deptEl.value; render(); });
+  const resetFiltersBtn = document.getElementById('btnResetFilters');
+  if(resetFiltersBtn) resetFiltersBtn.addEventListener('click', ()=>{
+    trackFilters = {q:'', status:'all', dept:'all'};
+    render();
+  });
+  const exportCsvBtn = document.getElementById('btnExportCsv');
+  if(exportCsvBtn) exportCsvBtn.addEventListener('click', ()=>{
+    const list = filteredTrackBills();
+    if(!list.length){ flashNotice('Nothing to export with the current filters.', true); return; }
+    exportBillsToCSV(list);
+  });
 }
 
 /* ---------------- init ---------------- */
+function renderLoadingScreen(){
+  document.getElementById('root').innerHTML = `
+    <div class="login-wrap">
+      <div class="surface login-card" style="text-align:center;">
+        <div class="login-brand" style="margin-bottom:8px;">
+          <span class="brand-icon login-brand-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+              <path d="M9 13.5l2 2 4-4.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+          <span class="brand-sub">Bill Movement &amp; Approval Register</span>
+        </div>
+        <p class="login-hint" style="margin-top:18px;">Connecting to the register…</p>
+      </div>
+    </div>
+  `;
+}
+
 async function init(){
-  renderLogin();
+  renderLoadingScreen();
   await loadAll();
+  renderLogin();
 }
 init();
 </script>
