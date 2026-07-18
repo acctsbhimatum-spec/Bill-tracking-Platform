@@ -766,6 +766,14 @@ function deptById(id){ return DEPARTMENTS.find(d=>d.id===id); }
 function uid(p){ return p+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,7); }
 function fmtMoney(n){ return '₹' + Number(n).toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function fmtDate(iso){ const d=new Date(iso); return d.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}); }
+function fmtDateOnly(dateStr){
+  if(!dateStr) return '—';
+  const parts = String(dateStr).split('-');
+  if(parts.length!==3) return fmtDate(dateStr);
+  const [y, m, d] = parts.map(Number);
+  const dt = new Date(y, m-1, d); // built from local Y/M/D directly — never shifts a day via UTC parsing
+  return dt.toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'});
+}
 function fmtDateTime(iso){ const d=new Date(iso); return d.toLocaleDateString('en-IN',{day:'2-digit',month:'short'}) + ' · ' + d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}); }
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function roleLabel(type){ return type==='branch'?'Branch':(type==='admin'?'Administrator':'Corporate'); }
@@ -1067,14 +1075,14 @@ function acknowledgeBill(billId, remarks){
   bill.acknowledged = true;
   addHistory(bill, 'acknowledged', null, remarks);
 }
-function returnToOrigin(billId, remarks){
+function returnBillTo(billId, targetType, targetId, remarks){
   const bill = bills.find(b=>b.id===billId);
   bill.returnedFromDept = bill.currentHolder; // remember who sent it back, so a resubmit goes right back to them
   bill.status = 'returned_to_branch';
-  bill.currentHolder = bill.originType==='branch' ? ('branch:'+bill.originId) : ('origin-dept:'+bill.originId);
+  bill.currentHolder = targetType==='branch' ? ('branch:'+targetId) : ('dept-return:'+targetId);
   bill.dueAt = null;
   bill.acknowledged = false;
-  addHistory(bill, 'returned_to_branch', null, remarks);
+  addHistory(bill, 'returned_to_branch', targetId, remarks);
 }
 function resubmit(billId, remarks){
   const bill = bills.find(b=>b.id===billId);
@@ -1132,11 +1140,21 @@ function sendToBranchForPayment(billId, remarks){
 }
 function editBill(billId, data){
   const bill = bills.find(b=>b.id===billId);
+  const changes = [];
+  if(bill.billNo !== data.billNo) changes.push(`Bill No "${bill.billNo}" → "${data.billNo}"`);
+  if(bill.billDate !== data.billDate) changes.push(`Bill Date ${fmtDateOnly(bill.billDate)} → ${fmtDateOnly(data.billDate)}`);
+  if(bill.vendor !== data.vendor) changes.push(`Party "${bill.vendor}" → "${data.vendor}"`);
+  const newAmount = parseFloat(data.amount);
+  if(bill.amount !== newAmount) changes.push(`Amount ${fmtMoney(bill.amount)} → ${fmtMoney(newAmount)}`);
+  if(bill.description !== data.description) changes.push('Description updated');
+
   bill.billNo = data.billNo;
   bill.billDate = data.billDate;
   bill.vendor = data.vendor;
-  bill.amount = parseFloat(data.amount);
+  bill.amount = newAmount;
   bill.description = data.description;
+
+  if(changes.length) addHistory(bill, 'edited', null, changes.join(' · '));
 }
 async function persistAndRender(msg){
   await saveBills();
@@ -1148,20 +1166,28 @@ async function persistAndRender(msg){
 function isInMyQueue(bill){
   if(session.type==='department'){
     const asProcessor = bill.status==='with_department' && bill.currentHolder===session.id;
-    const asOriginReturned = (bill.status==='returned_to_branch' || bill.status==='rejected') && bill.originType==='department' && bill.originId===session.id;
+    const asReturnRecipient = bill.status==='returned_to_branch' && bill.currentHolder==='dept-return:'+session.id;
+    const asRejectedOrigin = bill.status==='rejected' && bill.originType==='department' && bill.originId===session.id;
     const asPaymentHandler = session.id==='finance' && bill.status==='approved' && bill.currentHolder==='finance';
-    return asProcessor || asOriginReturned || asPaymentHandler;
+    return asProcessor || asReturnRecipient || asRejectedOrigin || asPaymentHandler;
   }
   if(session.type==='branch'){
-    const asOriginReturned = (bill.status==='returned_to_branch' || bill.status==='rejected') && bill.originType==='branch' && bill.originId===session.name;
+    const asReturnRecipient = bill.status==='returned_to_branch' && bill.currentHolder==='branch:'+session.name;
+    const asRejectedOrigin = bill.status==='rejected' && bill.originType==='branch' && bill.originId===session.name;
     const asPaymentHandler = bill.status==='approved' && bill.currentHolder==='branch:'+session.name;
-    return asOriginReturned || asPaymentHandler;
+    return asReturnRecipient || asRejectedOrigin || asPaymentHandler;
   }
   return false;
 }
 function isMyBill(bill){
   if(session.type==='branch') return bill.originType==='branch' && bill.originId===session.name;
   if(session.type==='department') return bill.originType==='department' && bill.originId===session.id;
+  return false;
+}
+function canEditBill(bill){
+  if(bill.status==='approved' || bill.status==='paid') return false;
+  if(isMyBill(bill)) return true;
+  if(session.type==='department' && (session.id==='finance' || session.id==='audit')) return true;
   return false;
 }
 function isProcessorItem(bill){
@@ -1210,11 +1236,12 @@ function actionLabel(h){
     case 'resubmitted': return 'Resubmitted to ' + (deptById(h.toDept)?.name || h.toDept);
     case 'verified_and_marked': return 'Verified, marked to ' + (deptById(h.toDept)?.name || h.toDept);
     case 'marked_to': return 'Marked to ' + (deptById(h.toDept)?.name || h.toDept);
-    case 'returned_to_branch': return 'Returned for correction';
+    case 'returned_to_branch': return h.toDept ? ('Returned to ' + (deptById(h.toDept)?.name || h.toDept) + ' for correction') : 'Returned for correction';
     case 'approved': return 'Approved — sent to Finance for payment';
     case 'rejected': return 'Rejected';
     case 'sent_for_branch_payment': return 'Sent to branch for payment';
     case 'paid': return 'Payment recorded';
+    case 'edited': return 'Bill details edited';
     default: return h.action;
   }
 }
@@ -2015,8 +2042,9 @@ function renderBillCard(bill, actionable, selectable){
 
   let actionHtml = '';
   if(actionable){
-    const originReturnedToMe = session.type==='department' && (bill.status==='returned_to_branch' || bill.status==='rejected')
-      && bill.originType==='department' && bill.originId===session.id;
+    const isReturnRecipient = session.type==='department' && bill.status==='returned_to_branch' && bill.currentHolder==='dept-return:'+session.id;
+    const isRejectedOrigin = session.type==='department' && bill.status==='rejected' && bill.originType==='department' && bill.originId===session.id;
+    const originReturnedToMe = isReturnRecipient || isRejectedOrigin;
     const needsAcknowledgment = isIncomingItem(bill);
     const isPayment = isPaymentItem(bill);
 
@@ -2047,6 +2075,16 @@ function renderBillCard(bill, actionable, selectable){
       const isGM = session.id==='gm';
       const otherDepts = isGM ? DEPARTMENTS.filter(d=>d.id==='finance') : DEPARTMENTS.filter(d=>d.id!==session.id);
       const isManagement = session.id==='management';
+
+      const returnTargets = [];
+      if(bill.originType==='branch'){
+        returnTargets.push({value:'branch::'+bill.originId, label: bill.originId + ' — originating branch'});
+      }
+      DEPARTMENTS.filter(d=>d.id!==session.id).forEach(d=>{
+        const isOrigin = bill.originType==='department' && bill.originId===d.id;
+        returnTargets.push({value:'dept::'+d.id, label: d.name + (isOrigin ? ' — originating department' : '')});
+      });
+
       actionHtml = `
         <div class="action-box">
           <h4 class="section-h">Action — as ${escapeHtml(session.name)}</h4>
@@ -2065,9 +2103,22 @@ function renderBillCard(bill, actionable, selectable){
           </div>
           <div class="btn-row" style="margin-top:12px;">
             <button class="primary small btnMark" data-bill="${bill.id}">${isGM ? 'Send to Finance' : 'Mark on'}</button>
-            <button class="ghost small btnReturn" data-bill="${bill.id}">Return to submitter</button>
             ${isManagement ? `<button class="ghost small btnApprove" data-bill="${bill.id}" style="border-color:var(--approved); color:var(--approved);">Approve (final)</button>
             <button class="ghost small btnReject" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Reject</button>` : ''}
+            ${canEditBill(bill) ? `<button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button>` : ''}
+          </div>
+          <div class="action-row" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule-strong);">
+            <div class="field">
+              <label>Return for correction, to</label>
+              <select class="returnToSelect" data-bill="${bill.id}">
+                ${returnTargets.map(t=>`<option value="${escapeHtml(t.value)}">${escapeHtml(t.label)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="field" style="flex:1;">
+              <label>Reason for return</label>
+              <input type="text" class="returnRemarkInput" data-bill="${bill.id}" placeholder="What needs fixing?">
+            </div>
+            <button class="ghost small btnReturn" data-bill="${bill.id}">Return</button>
           </div>
         </div>
       `;
@@ -2094,7 +2145,7 @@ function renderBillCard(bill, actionable, selectable){
     }
   }
 
-  const canEdit = !editing && isMyBill(bill) && bill.status!=='approved' && bill.status!=='paid';
+  const canEdit = !editing && canEditBill(bill);
   const editBtnHtml = canEdit && !actionable
     ? `<div class="btn-row" style="margin-top:14px;"><button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button></div>`
     : '';
@@ -2102,7 +2153,7 @@ function renderBillCard(bill, actionable, selectable){
   const paymentInfoHtml = bill.payment ? `
     <div class="bill-desc" style="border-left:3px solid var(--approved);">
       <b style="color:var(--approved);">Payment recorded</b><br>
-      ${escapeHtml(bill.payment.type)} from ${escapeHtml(bill.payment.bankAccount)} on ${fmtDate(bill.payment.paidOn)}
+      ${escapeHtml(bill.payment.type)} from ${escapeHtml(bill.payment.bankAccount)} on ${fmtDateOnly(bill.payment.paidOn)}
       ${bill.payment.reference ? ` · Ref: ${escapeHtml(bill.payment.reference)}` : ''}
       <br><span style="color:var(--ink-soft); font-size:12px;">Recorded by ${escapeHtml(bill.payment.recordedBy)}</span>
     </div>
@@ -2127,7 +2178,7 @@ function renderBillCard(bill, actionable, selectable){
           <div>
             <div class="bill-id">${bill.id} · ${escapeHtml(bill.billNo)}</div>
             <div class="bill-title">${escapeHtml(bill.vendor)}</div>
-            <div class="bill-meta">${escapeHtml(bill.branch)} &nbsp;·&nbsp; Bill dated ${fmtDate(bill.billDate)} &nbsp;·&nbsp; Logged ${fmtDate(bill.createdAt)}</div>
+            <div class="bill-meta">${escapeHtml(bill.branch)} &nbsp;·&nbsp; Bill dated ${fmtDateOnly(bill.billDate)} &nbsp;·&nbsp; Logged ${fmtDate(bill.createdAt)}</div>
           </div>
         </div>
         <div style="text-align:right;">
@@ -2273,10 +2324,15 @@ function attachHandlers(){
   document.querySelectorAll('.btnReturn').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const billId = btn.dataset.bill;
-      const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
-      if(!remarkEl.value.trim()){ flashNotice('Add a remark explaining what needs correction.', true); return; }
-      returnToOrigin(billId, remarkEl.value);
-      await persistAndRender('Returned to the submitter for correction.');
+      const selectEl = document.querySelector(`.returnToSelect[data-bill="${billId}"]`);
+      const remarkEl = document.querySelector(`.returnRemarkInput[data-bill="${billId}"]`);
+      if(!remarkEl.value.trim()){ flashNotice('Add a reason explaining what needs correction.', true); return; }
+      const idx = selectEl.value.indexOf('::');
+      const targetType = selectEl.value.slice(0, idx);
+      const targetId = selectEl.value.slice(idx+2);
+      const targetName = targetType==='branch' ? targetId : (deptById(targetId)?.name || targetId);
+      returnBillTo(billId, targetType, targetId, remarkEl.value);
+      await persistAndRender('Returned to ' + targetName + ' for correction.');
     });
   });
   document.querySelectorAll('.btnApprove').forEach(btn=>{
