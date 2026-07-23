@@ -834,12 +834,12 @@ function addDepartment(name, canEnter){
   return true;
 }
 async function saveOrgStructure(){
-  try{ await kvSet(ORG_KEY, {branches:BRANCHES, departments:DEPARTMENTS}); }catch(e){ console.error(e); }
+  return await saveWithRetry(()=>kvSet(ORG_KEY, {branches:BRANCHES, departments:DEPARTMENTS}));
 }
 async function clearAllBills(){
   bills = [];
   selectedBillIds.clear();
-  await saveBills();
+  return await saveBills();
 }
 
 /* ---------------- persistence ---------------- */
@@ -860,7 +860,16 @@ async function kvGet(key){
 }
 async function kvSet(key, value){
   const { error } = await sb.from('app_kv').upsert({ key, value, updated_at: new Date().toISOString() });
-  if(error) console.error('Supabase write error', error);
+  if(error){ console.error('Supabase write error', error); return false; }
+  return true;
+}
+async function saveWithRetry(fn){
+  let ok = await withTimeout(fn());
+  if(ok!==true){
+    await new Promise(r=>setTimeout(r, 500)); // brief pause, then one retry in case it was a transient blip
+    ok = await withTimeout(fn());
+  }
+  return ok===true;
 }
 async function loadOrgAndUsers(){
   connectionWarning = '';
@@ -902,8 +911,8 @@ async function loadAll(){
   connectionWarning = '';
   await Promise.all([loadOrgAndUsers(), loadBills()]);
 }
-async function saveBills(){ try{ await withTimeout(kvSet(BILLS_KEY, bills)); }catch(e){ console.error(e); } }
-async function saveUsers(){ try{ await withTimeout(kvSet(USERS_KEY, users)); }catch(e){ console.error(e); } }
+async function saveBills(){ return await saveWithRetry(()=>kvSet(BILLS_KEY, bills)); }
+async function saveUsers(){ return await saveWithRetry(()=>kvSet(USERS_KEY, users)); }
 
 let flashTimer=null;
 function flashNotice(msg, isError){
@@ -1157,9 +1166,13 @@ function editBill(billId, data){
   if(changes.length) addHistory(bill, 'edited', null, changes.join(' · '));
 }
 async function persistAndRender(msg){
-  await saveBills();
+  const ok = await saveBills();
   render();
-  if(msg) flashNotice(msg);
+  if(!ok){
+    flashNotice('⚠ Could not save this to the shared register — check your connection and try again. Refresh to see the real current state.', true);
+  }else if(msg){
+    flashNotice(msg);
+  }
 }
 
 /* ---------------- query helpers ---------------- */
@@ -1517,18 +1530,18 @@ function attachPwHandlers(){
     if(!nw || nw.length<4){ pwError='New password must be at least 4 characters.'; render(); return; }
     if(nw !== cf){ pwError='New password and confirmation do not match.'; render(); return; }
     users[session.id].password = nw;
-    await saveUsers();
+    const ok = await saveUsers();
     pwPanelOpen = false; pwError='';
     render();
-    flashGlobal('Password updated.');
+    flashGlobal(ok ? 'Password updated.' : '⚠ Could not save — check your connection and try again.', !ok);
   });
 }
-function flashGlobal(msg){
+function flashGlobal(msg, isError){
   // brief top-of-content confirmation when no in-panel notice exists
   const content = document.getElementById('content');
   if(!content) return;
   const banner = document.createElement('div');
-  banner.className = 'notice show';
+  banner.className = 'notice show' + (isError ? ' error' : '');
   banner.textContent = msg;
   content.prepend(banner);
   setTimeout(()=>banner.remove(), 3000);
@@ -2396,9 +2409,9 @@ function attachHandlers(){
     btn.addEventListener('click', async ()=>{
       const key = btn.dataset.user;
       users[key].password = DEFAULT_PASSWORD;
-      await saveUsers();
+      const ok = await saveUsers();
       render();
-      flashNotice(users[key].name + ' reset to the default password (0000).');
+      flashNotice(ok ? (users[key].name + ' reset to the default password (0000).') : '⚠ Could not save — check your connection and try again.', !ok);
     });
   });
 
@@ -2409,10 +2422,10 @@ function attachHandlers(){
       const fd = new FormData(addBranchForm);
       const name = fd.get('branchName') || '';
       if(!addBranch(String(name))){ render(); return; }
-      await saveOrgStructure();
-      await saveUsers();
+      const ok1 = await saveOrgStructure();
+      const ok2 = await saveUsers();
       render();
-      flashNotice(name.trim() + ' added, with Accounts and Marketing logins ready on password 0000.');
+      flashNotice((ok1 && ok2) ? (name.trim() + ' added, with Accounts and Marketing logins ready on password 0000.') : '⚠ Could not save — check your connection and try again.', !(ok1 && ok2));
     });
   }
   const addDeptForm = document.getElementById('addDeptForm');
@@ -2423,10 +2436,10 @@ function attachHandlers(){
       const name = fd.get('deptName') || '';
       const canEnter = fd.get('canEnterBills') === 'on';
       if(!addDepartment(String(name), canEnter)){ render(); return; }
-      await saveOrgStructure();
-      await saveUsers();
+      const ok1 = await saveOrgStructure();
+      const ok2 = await saveUsers();
       render();
-      flashNotice(name.trim() + ' added under Corporate, login ready on password 0000.');
+      flashNotice((ok1 && ok2) ? (name.trim() + ' added under Corporate, login ready on password 0000.') : '⚠ Could not save — check your connection and try again.', !(ok1 && ok2));
     });
   }
 
@@ -2443,9 +2456,9 @@ function attachHandlers(){
       e.preventDefault();
       if(clearBillsConfirmInput.value.trim() !== 'CLEAR ALL BILLS') return;
       const total = bills.length;
-      await clearAllBills();
+      const ok = await clearAllBills();
       render();
-      flashNotice(`All ${total} bill${total===1?'':'s'} cleared from the register.`);
+      flashNotice(ok ? `All ${total} bill${total===1?'':'s'} cleared from the register.` : '⚠ Could not save — check your connection and try again.', !ok);
     });
   }
 
