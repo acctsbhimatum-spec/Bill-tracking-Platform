@@ -2577,6 +2577,26 @@ async function init(){
   await loadOrgAndUsers();
   billsPrefetch = loadBills(); // keep loading in the background while the person picks their login
   renderLogin();
+  startBackgroundSync();
+}
+function isUserActivelyTyping(){
+  const el = document.activeElement;
+  if(!el) return false;
+  const tag = el.tagName;
+  return tag==='INPUT' || tag==='TEXTAREA' || tag==='SELECT';
+}
+function startBackgroundSync(){
+  setInterval(async ()=>{
+    if(!session || !dataLoaded) return;           // not logged in / not ready yet
+    if(editingBillId) return;                       // don't yank a bill out from under an active edit
+    if(pwPanelOpen) return;                          // don't disrupt a password change in progress
+    if(isUserActivelyTyping()) return;               // don't wipe out something being typed right now
+    const latest = await withTimeout(kvGet(BILLS_KEY), 6000);
+    if(Array.isArray(latest)){
+      bills = latest;
+      render();
+    }
+  }, 20000); // every 20s — frequent enough to feel current, light enough not to hammer the database
 }
 init();
 </script>
