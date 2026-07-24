@@ -961,6 +961,7 @@ function submitBill(data){
     }]
   };
   bills.unshift(bill);
+  return bill.id;
 }
 /* ---------------- excel import ---------------- */
 function excelDateToStr(v){
@@ -1046,17 +1047,18 @@ function clearImport(){ importRows=[]; importFileName=''; render(); }
 async function confirmImport(){
   const validRows = importRows.filter(r=>r.valid);
   if(!validRows.length) return;
-  validRows.forEach(r=>{
+  const newIds = validRows.map(r=>{
     const data = {...r.parsed};
     data.remarks = data.remarks ? data.remarks + ' (Imported from Excel)' : 'Imported from Excel';
-    submitBill(data);
+    return submitBill(data);
   });
   const skipped = importRows.length - validRows.length;
   importRows = [];
   importFileName = '';
   await persistAndRender(
     `Imported ${validRows.length} bill${validRows.length===1?'':'s'}.` +
-    (skipped ? ` ${skipped} row${skipped===1?'':'s'} skipped — fix and re-upload if needed.` : '')
+    (skipped ? ` ${skipped} row${skipped===1?'':'s'} skipped — fix and re-upload if needed.` : ''),
+    newIds
   );
 }
 
@@ -1165,7 +1167,22 @@ function editBill(billId, data){
 
   if(changes.length) addHistory(bill, 'edited', null, changes.join(' · '));
 }
-async function persistAndRender(msg){
+async function persistAndRender(msg, affectedIds){
+  // Multiple people have this open at once, sometimes for hours without reloading.
+  // Never blindly upload our whole in-memory bills array — that would silently
+  // stomp on anything anyone else saved since our tab last loaded. Instead, pull
+  // the latest shared state and patch in only the bill(s) this action touched.
+  const ids = affectedIds || [];
+  if(ids.length){
+    const latest = await withTimeout(kvGet(BILLS_KEY));
+    if(Array.isArray(latest)){
+      const touched = {};
+      ids.forEach(id=>{ const b = bills.find(x=>x.id===id); if(b) touched[id] = b; });
+      const merged = latest.map(b => touched[b.id] ? touched[b.id] : b);
+      ids.forEach(id=>{ if(touched[id] && !merged.some(b=>b.id===id)) merged.unshift(touched[id]); });
+      bills = merged;
+    }
+  }
   const ok = await saveBills();
   render();
   if(!ok){
@@ -2275,7 +2292,7 @@ function attachHandlers(){
       if(!ids.length) return;
       ids.forEach(id=> markForward(id, deptSel.value, remarkEl.value));
       selectedBillIds.clear();
-      await persistAndRender(`Marked ${ids.length} bill${ids.length===1?'':'s'} on to ` + deptById(deptSel.value).name + '.');
+      await persistAndRender(`Marked ${ids.length} bill${ids.length===1?'':'s'} on to ` + deptById(deptSel.value).name + '.', ids);
     });
   }
 
@@ -2289,9 +2306,9 @@ function attachHandlers(){
         flashNotice('Please fill in all required fields, including the department to send it to.', true);
         return;
       }
-      submitBill(data);
+      const newId = submitBill(data);
       form.reset();
-      await persistAndRender('Bill ' + data.billNo + ' logged and sent to ' + deptById(data.department).name + '.');
+      await persistAndRender('Bill ' + data.billNo + ' logged and sent to ' + deptById(data.department).name + '.', [newId]);
     });
   }
 
@@ -2300,7 +2317,7 @@ function attachHandlers(){
       const billId = btn.dataset.bill;
       const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
       acknowledgeBill(billId, remarkEl ? remarkEl.value : '');
-      await persistAndRender('Receipt acknowledged.');
+      await persistAndRender('Receipt acknowledged.', [billId]);
     });
   });
   document.querySelectorAll('.paymentForm').forEach(form=>{
@@ -2314,14 +2331,14 @@ function attachHandlers(){
         return;
       }
       recordPayment(billId, data);
-      await persistAndRender('Payment recorded for bill.');
+      await persistAndRender('Payment recorded for bill.', [billId]);
     });
   });
   document.querySelectorAll('.btnSendBranchPay').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
       const billId = btn.dataset.bill;
       sendToBranchForPayment(billId, 'Sent to branch for local payment');
-      await persistAndRender('Sent to the branch for payment.');
+      await persistAndRender('Sent to the branch for payment.', [billId]);
     });
   });
 
@@ -2331,7 +2348,7 @@ function attachHandlers(){
       const sel = document.querySelector(`.markToSelect[data-bill="${billId}"]`);
       const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
       markForward(billId, sel.value, remarkEl.value);
-      await persistAndRender('Marked on to ' + deptById(sel.value).name + '.');
+      await persistAndRender('Marked on to ' + deptById(sel.value).name + '.', [billId]);
     });
   });
   document.querySelectorAll('.btnReturn').forEach(btn=>{
@@ -2345,7 +2362,7 @@ function attachHandlers(){
       const targetId = selectEl.value.slice(idx+2);
       const targetName = targetType==='branch' ? targetId : (deptById(targetId)?.name || targetId);
       returnBillTo(billId, targetType, targetId, remarkEl.value);
-      await persistAndRender('Returned to ' + targetName + ' for correction.');
+      await persistAndRender('Returned to ' + targetName + ' for correction.', [billId]);
     });
   });
   document.querySelectorAll('.btnApprove').forEach(btn=>{
@@ -2353,7 +2370,7 @@ function attachHandlers(){
       const billId = btn.dataset.bill;
       const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
       approveBill(billId, remarkEl.value);
-      await persistAndRender('Bill approved.');
+      await persistAndRender('Bill approved.', [billId]);
     });
   });
   document.querySelectorAll('.btnReject').forEach(btn=>{
@@ -2362,7 +2379,7 @@ function attachHandlers(){
       const remarkEl = document.querySelector(`.remarkInput[data-bill="${billId}"]`);
       if(!remarkEl.value.trim()){ flashNotice('Add a remark explaining the rejection.', true); return; }
       rejectBill(billId, remarkEl.value);
-      await persistAndRender('Bill rejected.');
+      await persistAndRender('Bill rejected.', [billId]);
     });
   });
   document.querySelectorAll('.btnResubmit').forEach(btn=>{
@@ -2373,7 +2390,7 @@ function attachHandlers(){
       const deptName = deptById(bill.returnedFromDept)?.name || 'the department';
       if(bill.status==='rejected') resubmitRejected(billId, remarkEl.value);
       else resubmit(billId, remarkEl.value);
-      await persistAndRender('Resubmitted to ' + deptName + '.');
+      await persistAndRender('Resubmitted to ' + deptName + '.', [billId]);
     });
   });
 
@@ -2401,7 +2418,7 @@ function attachHandlers(){
       }
       editBill(billId, data);
       editingBillId = null;
-      await persistAndRender('Bill details updated.');
+      await persistAndRender('Bill details updated.', [billId]);
     });
   });
 
