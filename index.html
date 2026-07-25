@@ -1,4 +1,4 @@
- 	<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2193,7 +2193,6 @@ function renderBillCard(bill, actionable, selectable){
             ${isManagement ? `<button class="ghost small btnApprove" data-bill="${bill.id}" style="border-color:var(--approved); color:var(--approved);">Approve (final)</button>
             <button class="ghost small btnReject" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Reject</button>` : ''}
             ${canEditBill(bill) ? `<button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button>` : ''}
-            ${canDeleteBill(bill) ? `<button class="ghost small btnDeletePrompt" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Delete bill</button>` : ''}
           </div>
           <div class="action-row" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule-strong);">
             <div class="field">
@@ -2236,9 +2235,10 @@ function renderBillCard(bill, actionable, selectable){
   const deleting = deletingBillId===bill.id;
   const canEdit = !editing && !deleting && canEditBill(bill);
   const canDelete = !editing && !deleting && canDeleteBill(bill);
-  const standaloneBtnRow = (canEdit || canDelete) && !actionable
+  const showEditHere = canEdit && !actionable; // when actionable+processing, Edit is already inline in the action box above
+  const standaloneBtnRow = (showEditHere || canDelete)
     ? `<div class="btn-row" style="margin-top:14px;">
-        ${canEdit ? `<button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button>` : ''}
+        ${showEditHere ? `<button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button>` : ''}
         ${canDelete ? `<button class="ghost small btnDeletePrompt" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Delete bill</button>` : ''}
       </div>`
     : '';
