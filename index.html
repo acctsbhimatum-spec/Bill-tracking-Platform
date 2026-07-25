@@ -988,6 +988,19 @@ function excelDateToStr(v){
   }
   return null;
 }
+function normalizeForMatch(s){
+  return String(s||'').toLowerCase().replace(/\s+/g,' ').replace(/\bdept\.?\b/g,'department').trim();
+}
+function findMatchingDepartment(raw){
+  const norm = normalizeForMatch(raw);
+  if(!norm) return null;
+  return DEPARTMENTS.find(d=>{
+    const name = normalizeForMatch(d.name);
+    const code = normalizeForMatch(d.code);
+    const nameNoSuffix = name.replace(/\s*department\s*$/,'').trim();
+    return norm===name || norm===code || norm===nameNoSuffix;
+  }) || null;
+}
 function validateImportRow(raw){
   const errors=[];
   const billNo = String(raw['Bill No']||'').trim();
@@ -997,13 +1010,13 @@ function validateImportRow(raw){
   const billDate = excelDateToStr(raw['Bill Date']);
   const description = String(raw['Description']||'').trim();
   const remarks = String(raw['Remarks']||'').trim();
-  const department = DEPARTMENTS.find(d=> d.name.toLowerCase()===departmentRaw.toLowerCase() || d.code.toLowerCase()===departmentRaw.toLowerCase());
+  const department = findMatchingDepartment(departmentRaw);
 
   if(!billNo) errors.push('Missing Bill No');
   if(!vendor) errors.push('Missing Party');
   if(isNaN(amount) || amount<=0) errors.push('Invalid Amount');
   if(!billDate) errors.push('Invalid or missing Bill Date');
-  if(!department) errors.push('Department must be one of: ' + DEPARTMENTS.map(d=>d.name).join(', '));
+  if(!department) errors.push(`Department "${departmentRaw||'(blank)'}" doesn't match any of: ` + DEPARTMENTS.map(d=>d.name).join(', '));
   else if(session.type==='department' && department.id===session.id) errors.push('Cannot send a bill to your own department');
   if(!description) errors.push('Missing Description');
 
@@ -1702,6 +1715,17 @@ function renderNewBill(){
 function renderImportPreview(){
   if(!importRows.length) return '';
   const validCount = importRows.filter(r=>r.valid).length;
+  const invalidCount = importRows.length - validCount;
+
+  let summaryHtml = '';
+  if(invalidCount>0){
+    if(validCount===0){
+      summaryHtml = `<div class="notice error show" style="position:static; margin-top:14px;"><b>None of the ${importRows.length} row${importRows.length===1?'':'s'} could be imported.</b> Check the Status column and the red notes below each row — the most common issue is the Department column not exactly matching one of: ${DEPARTMENTS.map(d=>d.name).join(', ')}.</div>`;
+    }else{
+      summaryHtml = `<div class="notice error show" style="position:static; margin-top:14px;"><b>${invalidCount} of ${importRows.length} row${importRows.length===1?'':'s'} have a problem</b> and will be skipped — see the red notes below each row.</div>`;
+    }
+  }
+
   const rowsHtml = importRows.map((r,i)=>`
     <tr>
       <td>${i+1}</td>
@@ -1716,6 +1740,7 @@ function renderImportPreview(){
   `).join('');
 
   return `
+    ${summaryHtml}
     <div style="overflow-x:auto; margin-top:14px; border:1px solid var(--rule); border-radius:6px;">
       <table class="user-table">
         <thead><tr><th>Row</th><th>Bill No</th><th>Party</th><th>Amount</th><th>Date</th><th>Department</th><th>Status</th></tr></thead>
