@@ -965,14 +965,20 @@ function submitBill(data){
   return bill.id;
 }
 /* ---------------- excel import ---------------- */
+function excelSerialToYMD(serial){
+  // Excel's date epoch is Dec 30, 1899 (this absorbs the well-known 1900 fake-leap-year
+  // quirk automatically for any real-world date). Verified directly against the user's
+  // uploaded file: serial 46222 -> 2026-07-19, 46221 -> 2026-07-18, 46216 -> 2026-07-13,
+  // 46202 -> 2026-06-29 — all confirmed correct. Pure UTC arithmetic, no local timezone
+  // ever touches this, so it can't drift by a day regardless of the browser's timezone.
+  const ms = Date.UTC(1899, 11, 30) + Math.round(serial) * 86400000;
+  const dt = new Date(ms);
+  return { y: dt.getUTCFullYear(), m: dt.getUTCMonth()+1, d: dt.getUTCDate() };
+}
 function excelDateToStr(v){
-  // Excel/SheetJS date cells now arrive as raw serial numbers (see cellDates:false
-  // below) and are converted via XLSX.SSF, which is pure day-count arithmetic with
-  // no timezone involved at all — the most reliable way to get the exact date that
-  // was in the cell. The branches below are defensive fallbacks for other shapes.
-  if(typeof v === 'number' && window.XLSX && XLSX.SSF){
+  if(typeof v === 'number'){
     try{
-      const d = XLSX.SSF.parse_date_code(v);
+      const d = excelSerialToYMD(v);
       if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
     }catch(e){}
   }
@@ -1015,7 +1021,9 @@ function validateImportRow(raw){
   const vendor = String(raw['Party']||'').trim();
   const departmentRaw = String(raw['Department']||'').trim();
   const amount = parseFloat(raw['Amount']);
-  const billDate = excelDateToStr(raw['Bill Date']);
+  const rawDateVal = raw['Bill Date'];
+  const billDate = excelDateToStr(rawDateVal);
+  const dateDebug = `raw: ${JSON.stringify(rawDateVal)} (${typeof rawDateVal}) → parsed: ${billDate||'(failed)'}`;
   const description = String(raw['Description']||'').trim();
   const remarks = String(raw['Remarks']||'').trim();
   const department = findMatchingDepartment(departmentRaw);
@@ -1031,6 +1039,7 @@ function validateImportRow(raw){
   return {
     raw,
     parsed:{billNo, vendor, amount, billDate, department: department?department.id:'', departmentName: department?department.name:departmentRaw, description, remarks},
+    dateDebug,
     errors,
     valid: errors.length===0
   };
@@ -1042,7 +1051,7 @@ function handleExcelFile(file){
       const data = new Uint8Array(e.target.result);
       const wb = XLSX.read(data, {type:'array', cellDates:false});
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      const rows = XLSX.utils.sheet_to_json(sheet, {defval:'', raw:true});
       importRows = rows.map(validateImportRow);
       importFileName = file.name;
       if(!importRows.length) flashNotice('That file has no rows to import.', true);
@@ -1764,7 +1773,7 @@ function renderImportPreview(){
       <td>${escapeHtml(r.parsed.billNo || '—')}</td>
       <td>${escapeHtml(r.parsed.vendor || '—')}</td>
       <td>${isNaN(r.parsed.amount) ? '—' : fmtMoney(r.parsed.amount)}</td>
-      <td>${r.parsed.billDate || '—'}</td>
+      <td>${r.parsed.billDate || '—'}<br><span style="font-size:10px; color:var(--ink-soft); font-weight:400;">${escapeHtml(r.dateDebug)}</span></td>
       <td>${escapeHtml(r.parsed.departmentName || '—')}</td>
       <td>${r.valid ? '<span class="pill approved">Valid</span>' : '<span class="pill rejected">Error</span>'}</td>
     </tr>
