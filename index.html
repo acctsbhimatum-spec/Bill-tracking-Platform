@@ -966,18 +966,19 @@ function submitBill(data){
 }
 /* ---------------- excel import ---------------- */
 function excelDateToStr(v){
-  if(v instanceof Date && !isNaN(v)){
-    // SheetJS's cellDates option builds Date objects positioned at UTC midnight for
-    // the intended calendar day — reading them back with local getters can roll the
-    // date a day backwards in timezones behind UTC. UTC getters give the correct day.
-    const y=v.getUTCFullYear(), m=String(v.getUTCMonth()+1).padStart(2,'0'), d=String(v.getUTCDate()).padStart(2,'0');
-    return `${y}-${m}-${d}`;
-  }
+  // Excel/SheetJS date cells now arrive as raw serial numbers (see cellDates:false
+  // below) and are converted via XLSX.SSF, which is pure day-count arithmetic with
+  // no timezone involved at all — the most reliable way to get the exact date that
+  // was in the cell. The branches below are defensive fallbacks for other shapes.
   if(typeof v === 'number' && window.XLSX && XLSX.SSF){
     try{
       const d = XLSX.SSF.parse_date_code(v);
       if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`;
     }catch(e){}
+  }
+  if(v instanceof Date && !isNaN(v)){
+    const y=v.getUTCFullYear(), m=String(v.getUTCMonth()+1).padStart(2,'0'), d=String(v.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${d}`;
   }
   if(typeof v === 'string'){
     const s = v.trim();
@@ -1039,7 +1040,7 @@ function handleExcelFile(file){
   reader.onload = (e)=>{
     try{
       const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, {type:'array', cellDates:true});
+      const wb = XLSX.read(data, {type:'array', cellDates:false});
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
       importRows = rows.map(validateImportRow);
