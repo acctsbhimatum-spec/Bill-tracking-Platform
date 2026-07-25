@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ 	<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -756,6 +756,7 @@ let importRows = [];
 let importFileName = '';
 let deptTab = DEPARTMENTS[0].id;
 let editingBillId = null;
+let deletingBillId = null;
 let selectedBillIds = new Set();
 let addBranchError = '';
 let addDeptError = '';
@@ -966,7 +967,10 @@ function submitBill(data){
 /* ---------------- excel import ---------------- */
 function excelDateToStr(v){
   if(v instanceof Date && !isNaN(v)){
-    const y=v.getFullYear(), m=String(v.getMonth()+1).padStart(2,'0'), d=String(v.getDate()).padStart(2,'0');
+    // SheetJS's cellDates option builds Date objects positioned at UTC midnight for
+    // the intended calendar day — reading them back with local getters can roll the
+    // date a day backwards in timezones behind UTC. UTC getters give the correct day.
+    const y=v.getUTCFullYear(), m=String(v.getUTCMonth()+1).padStart(2,'0'), d=String(v.getUTCDate()).padStart(2,'0');
     return `${y}-${m}-${d}`;
   }
   if(typeof v === 'number' && window.XLSX && XLSX.SSF){
@@ -983,7 +987,10 @@ function excelDateToStr(v){
     if(m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
     if(s){
       const parsed = new Date(s);
-      if(!isNaN(parsed)) return excelDateToStr(parsed);
+      if(!isNaN(parsed)){
+        const y=parsed.getFullYear(), m2=String(parsed.getMonth()+1).padStart(2,'0'), d2=String(parsed.getDate()).padStart(2,'0');
+        return `${y}-${m2}-${d2}`;
+      }
     }
   }
   return null;
@@ -1180,6 +1187,13 @@ function editBill(billId, data){
 
   if(changes.length) addHistory(bill, 'edited', null, changes.join(' · '));
 }
+function deleteBill(billId, reason){
+  const bill = bills.find(b=>b.id===billId);
+  bill.deletedInfo = { by: session.name, at: new Date().toISOString(), reason };
+  bill.status = 'deleted';
+  bill.dueAt = null;
+  addHistory(bill, 'deleted', null, reason);
+}
 async function persistAndRender(msg, affectedIds){
   // Multiple people have this open at once, sometimes for hours without reloading.
   // Never blindly upload our whole in-memory bills array — that would silently
@@ -1228,10 +1242,14 @@ function isMyBill(bill){
   return false;
 }
 function canEditBill(bill){
-  if(bill.status==='approved' || bill.status==='paid') return false;
+  if(bill.status==='approved' || bill.status==='paid' || bill.status==='deleted') return false;
   if(isMyBill(bill)) return true;
   if(session.type==='department' && (session.id==='finance' || session.id==='audit')) return true;
   return false;
+}
+function canDeleteBill(bill){
+  if(bill.status==='approved' || bill.status==='paid' || bill.status==='deleted') return false;
+  return session.type==='department' && session.id==='finance';
 }
 function isProcessorItem(bill){
   return session.type==='department' && bill.status==='with_department' && bill.currentHolder===session.id && bill.acknowledged;
@@ -1255,6 +1273,7 @@ function visibleBills(){
   return bills.slice();
 }
 function statusInfo(bill){
+  if(bill.status==='deleted') return {label:'Deleted', cls:'rejected'};
   if(bill.status==='paid') return {label:'Paid', cls:'approved'};
   if(bill.status==='approved'){
     if(bill.currentHolder && bill.currentHolder.startsWith('branch:')) return {label:'Approved — Payment Pending (Branch)', cls:'hold'};
@@ -1268,7 +1287,7 @@ function statusInfo(bill){
 }
 function actionClass(action){
   if(action==='approved' || action==='paid') return 'c-approved';
-  if(action==='rejected') return 'c-rejected';
+  if(action==='rejected' || action==='deleted') return 'c-rejected';
   if(action==='returned_to_branch' || action==='sent_for_branch_payment') return 'c-hold';
   return 'c-pending';
 }
@@ -1285,6 +1304,7 @@ function actionLabel(h){
     case 'sent_for_branch_payment': return 'Sent to branch for payment';
     case 'paid': return 'Payment recorded';
     case 'edited': return 'Bill details edited';
+    case 'deleted': return 'Deleted by Finance';
     default: return h.action;
   }
 }
@@ -1579,13 +1599,15 @@ function flashGlobal(msg, isError){
 
 /* ---------------- dashboard ---------------- */
 function renderDashboard(){
-  const scoped = visibleBills();
+  const scoped = visibleBills().filter(b=>b.status!=='deleted');
+  const deletedBills = visibleBills().filter(b=>b.status==='deleted');
   const total = scoped.length;
   const pending = scoped.filter(b=>b.status==='with_department').length;
   const held = scoped.filter(b=>b.status==='returned_to_branch').length;
   const paymentPending = scoped.filter(b=>b.status==='approved').length;
   const paid = scoped.filter(b=>b.status==='paid').length;
   const rejected = scoped.filter(b=>b.status==='rejected').length;
+  const deleted = deletedBills.length;
   const overdue = scoped.filter(b=>dueInfo(b)?.cls==='overdue').length;
 
   let loadSection = '';
@@ -1601,6 +1623,12 @@ function renderDashboard(){
 
   const feedItems = scoped
     .flatMap(b=>b.history.map(h=>({...h, billNo:b.billNo})))
+    .filter(h=>{
+      if(session.type==='admin') return true; // admin's job is org-wide oversight, so this stays unrestricted
+      if(session.type==='branch') return h.actorType==='branch' && h.actorName===session.name;
+      if(session.type==='department') return h.actorType==='department' && h.actorDeptId===session.id;
+      return false;
+    })
     .sort((a,b)=> new Date(b.at)-new Date(a.at))
     .slice(0,10);
 
@@ -1610,6 +1638,8 @@ function renderDashboard(){
       <span><b>${escapeHtml(h.actorName)}</b> — ${actionLabel(h)} <span style="color:var(--ink-soft)">on bill</span> <span style="font-family:'IBM Plex Mono',monospace">${escapeHtml(h.billNo)}</span></span>
     </div>
   `).join('') : `<div class="empty">No activity yet.</div>`;
+
+  const feedTitle = session.type==='admin' ? 'Recent movement — all branches &amp; departments' : 'Recent movement — your activity';
 
   const introText = session.type==='branch'
     ? `Everything ${escapeHtml(session.name)} has logged into the register.`
@@ -1626,9 +1656,10 @@ function renderDashboard(){
       <div class="surface stat-card hold clickable" data-goto-status="approved"><div class="num">${paymentPending}</div><div class="lbl">Approved — payment pending</div></div>
       <div class="surface stat-card approved clickable" data-goto-status="paid"><div class="num">${paid}</div><div class="lbl">Paid</div></div>
       <div class="surface stat-card rejected clickable" data-goto-status="rejected"><div class="num">${rejected}</div><div class="lbl">Rejected</div></div>
+      <div class="surface stat-card rejected clickable" data-goto-status="deleted"><div class="num">${deleted}</div><div class="lbl">Deleted (data-entry errors)</div></div>
     </div>
     ${loadSection}
-    <h3 class="section-h">Recent movement</h3>
+    <h3 class="section-h">${feedTitle}</h3>
     <div class="surface feed">${feedHtml}</div>
   `;
 }
@@ -1956,6 +1987,7 @@ function renderTrack(){
           <option value="approved" ${trackFilters.status==='approved'?'selected':''}>Approved — payment pending</option>
           <option value="paid" ${trackFilters.status==='paid'?'selected':''}>Paid</option>
           <option value="rejected" ${trackFilters.status==='rejected'?'selected':''}>Rejected</option>
+          <option value="deleted" ${trackFilters.status==='deleted'?'selected':''}>Deleted</option>
         </select>
         ${deptFilterHtml}
         ${branchFilterHtml}
@@ -2161,6 +2193,7 @@ function renderBillCard(bill, actionable, selectable){
             ${isManagement ? `<button class="ghost small btnApprove" data-bill="${bill.id}" style="border-color:var(--approved); color:var(--approved);">Approve (final)</button>
             <button class="ghost small btnReject" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Reject</button>` : ''}
             ${canEditBill(bill) ? `<button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button>` : ''}
+            ${canDeleteBill(bill) ? `<button class="ghost small btnDeletePrompt" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Delete bill</button>` : ''}
           </div>
           <div class="action-row" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--rule-strong);">
             <div class="field">
@@ -2200,9 +2233,14 @@ function renderBillCard(bill, actionable, selectable){
     }
   }
 
-  const canEdit = !editing && canEditBill(bill);
-  const editBtnHtml = canEdit && !actionable
-    ? `<div class="btn-row" style="margin-top:14px;"><button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button></div>`
+  const deleting = deletingBillId===bill.id;
+  const canEdit = !editing && !deleting && canEditBill(bill);
+  const canDelete = !editing && !deleting && canDeleteBill(bill);
+  const standaloneBtnRow = (canEdit || canDelete) && !actionable
+    ? `<div class="btn-row" style="margin-top:14px;">
+        ${canEdit ? `<button class="ghost small btnEdit" data-bill="${bill.id}">Edit bill details</button>` : ''}
+        ${canDelete ? `<button class="ghost small btnDeletePrompt" data-bill="${bill.id}" style="border-color:var(--rejected); color:var(--rejected);">Delete bill</button>` : ''}
+      </div>`
     : '';
 
   const paymentInfoHtml = bill.payment ? `
@@ -2214,13 +2252,22 @@ function renderBillCard(bill, actionable, selectable){
     </div>
   ` : '';
 
-  const bodyHtml = editing ? renderEditForm(bill) : `
+  const deletedInfoHtml = bill.deletedInfo ? `
+    <div class="bill-desc" style="border-left:3px solid var(--rejected);">
+      <b style="color:var(--rejected);">Deleted</b><br>
+      ${escapeHtml(bill.deletedInfo.reason)}
+      <br><span style="color:var(--ink-soft); font-size:12px;">By ${escapeHtml(bill.deletedInfo.by)} on ${fmtDate(bill.deletedInfo.at)}</span>
+    </div>
+  ` : '';
+
+  const bodyHtml = editing ? renderEditForm(bill) : deleting ? renderDeleteForm(bill) : `
     <div class="bill-desc">${escapeHtml(bill.description)}</div>
     ${paymentInfoHtml}
+    ${deletedInfoHtml}
     <h4 class="section-h">Movement trail</h4>
     <div class="trail">${trailHtml}</div>
     ${actionHtml}
-    ${editBtnHtml}
+    ${standaloneBtnRow}
   `;
 
   return `
@@ -2279,6 +2326,25 @@ function renderEditForm(bill){
         </div>
       </div>
     </form>
+  `;
+}
+
+function renderDeleteForm(bill){
+  return `
+    <div class="action-box" style="background:var(--rejected-soft); border-color:var(--rejected);">
+      <h4 class="section-h" style="color:var(--rejected);">Delete this bill</h4>
+      <p class="form-note" style="margin:0 0 10px 0;">Use this when the branch entered a bill in error — duplicate, wrong bill entirely, and so on. The bill is kept as a "Deleted" record with your reason attached (visible to the branch and in Track All Bills), not erased outright. This cannot be undone.</p>
+      <form class="deleteForm" data-bill="${bill.id}">
+        <div class="field full" style="margin-bottom:12px;">
+          <label>Reason for deletion</label>
+          <input type="text" name="reason" required placeholder="e.g. Duplicate of INV-1042, entered twice by mistake" style="width:100%;">
+        </div>
+        <div class="btn-row">
+          <button type="submit" class="ghost small" style="border-color:var(--rejected); color:var(--rejected);">Confirm delete</button>
+          <button type="button" class="ghost small btnCancelDelete" data-bill="${bill.id}">Cancel</button>
+        </div>
+      </form>
+    </div>
   `;
 }
 
@@ -2444,6 +2510,31 @@ function attachHandlers(){
       editBill(billId, data);
       editingBillId = null;
       await persistAndRender('Bill details updated.', [billId]);
+    });
+  });
+
+  document.querySelectorAll('.btnDeletePrompt').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      deletingBillId = btn.dataset.bill;
+      render();
+    });
+  });
+  document.querySelectorAll('.btnCancelDelete').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      deletingBillId = null;
+      render();
+    });
+  });
+  document.querySelectorAll('.deleteForm').forEach(form=>{
+    form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const billId = form.dataset.bill;
+      const fd = new FormData(form);
+      const reason = String(fd.get('reason')||'').trim();
+      if(!reason){ flashNotice('Add a reason for deleting this bill.', true); return; }
+      deleteBill(billId, reason);
+      deletingBillId = null;
+      await persistAndRender('Bill deleted.', [billId]);
     });
   });
 
